@@ -1,0 +1,81 @@
+{
+  "schema_version": "1",
+  "experiment": "inference-ci-reliability-001",
+  "question": "Does longer-duration, interleaved measurement make a 10% inference-throughput regression decision trustworthy at concurrency 32?",
+  "target_hardware": {
+    "gpu": "NVIDIA H100 80GB HBM3",
+    "cloud": "Secure Cloud",
+    "same_physical_gpu_required": true
+  },
+  "model": "BAAI/bge-m3",
+  "server": {
+    "port": 8043,
+    "model_name": "bge",
+    "args": [
+      "--served-model-name",
+      "bge",
+      "--runner",
+      "pooling",
+      "--port",
+      "8043",
+      "--gpu-memory-utilization",
+      "0.10",
+      "--api-server-count",
+      "8"
+    ]
+  },
+  "dataset": {
+    "repo_id": "mteb/RuBQRetrieval",
+    "revision": "7229066ed7a617ef50aad51c5a2d95957eaee537",
+    "split": "corpus",
+    "selection": "first 4096 rows in dataset order",
+    "batch_size": 32,
+    "concurrency": 32,
+    "dataset_manifest": "../vllm-52630/dataset_manifest.json"
+  },
+  "schedule": [
+    "baseline",
+    "candidate",
+    "candidate",
+    "baseline",
+    "baseline",
+    "candidate",
+    "candidate",
+    "baseline",
+    "baseline",
+    "candidate",
+    "candidate",
+    "baseline"
+  ],
+  "warmup_seconds": 300,
+  "measurement_seconds": 300,
+  "stability": {
+    "metric": "coefficient_of_variation",
+    "max_cv_percent": 5.0,
+    "failed_requests_allowed": 0
+  },
+  "regression": {
+    "metric": "texts_per_second",
+    "threshold_percent": -10.0
+  },
+  "bootstrap": {
+    "samples": 10000,
+    "seed": 52630001
+  },
+  "baseline": {
+    "label": "0.19.0",
+    "vllm_version": "0.19.0",
+    "torch_version": "2.10.0",
+    "environment_path": "/workspace/envs/v0190",
+    "compile_cache": "/workspace/vllm-cache-v0190",
+    "torchinductor_cache": "/workspace/torchinductor-v0190"
+  },
+  "candidate": {
+    "label": "0.21.0",
+    "vllm_version": "0.21.0",
+    "torch_version": "2.11.0",
+    "environment_path": "/workspace/envs/v0210",
+    "compile_cache": "/workspace/vllm-cache-v0210",
+    "torchinductor_cache": "/workspace/torchinductor-v0210"
+  }
+}

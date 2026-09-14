@@ -1,0 +1,36 @@
+{
+  "schema_version": "1",
+  "environment": {
+    "gpu": "NVIDIA L4",
+    "vllm_version": "0.28.0",
+    "model": "Qwen/Qwen3-0.6B",
+    "image": "vllm/vllm-openai:v0.28.0"
+  },
+  "benchmark_parameters": {
+    "dataset": "random",
+    "input_tokens": 512,
+    "output_tokens": 128,
+    "num_prompts": 100,
+    "max_concurrency": 32,
+    "request_rate": "inf",
+    "seed": 7
+  },
+  "metrics": {
+    "ttft_ms": {
+      "mean": 40.0,
+      "median": 38.0,
+      "p95": 60.0
+    },
+    "tpot_ms": {
+      "mean": 10.0,
+      "median": 9.5,
+      "p95": 12.0
+    },
+    "output_token_throughput": 1000.0,
+    "request_throughput": 10.0,
+    "requests": {
+      "successful": 100,
+      "failed": 0
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "schema_version": "1",
+  "environment": {"gpu": "NVIDIA H100 80GB HBM3", "vllm_version": "0.19.0", "model": "BAAI/bge-m3", "image": "sanitized-example"},
+  "benchmark_parameters": {"concurrency": 32, "dataset": "RuBQRetrieval", "dataset_revision": "7229066ed7a617ef50aad51c5a2d95957eaee537", "documents": 4096, "batch_size": 32},
+  "metrics": {"texts_per_second": 2167.4666666666667, "requests": {"successful": 1, "failed": 0}, "ttft_ms": {}, "tpot_ms": {}}
+}

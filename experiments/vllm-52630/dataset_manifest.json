@@ -1,0 +1,25 @@
+{
+  "schema_version": "1",
+  "dataset": "mteb/RuBQRetrieval",
+  "revision": "7229066ed7a617ef50aad51c5a2d95957eaee537",
+  "resolved_commit_sha": "7229066ed7a617ef50aad51c5a2d95957eaee537",
+  "split": "corpus",
+  "data_files": {
+    "corpus": "https://huggingface.co/datasets/mteb/RuBQRetrieval/resolve/7229066ed7a617ef50aad51c5a2d95957eaee537/corpus/test/0000.parquet"
+  },
+  "data_files_split": "corpus",
+  "selection": {
+    "kind": "contiguous_row_range",
+    "start": 0,
+    "count": 4096,
+    "order": "dataset order, no shuffle"
+  },
+  "selected_index_sha256": "cb2249fa75b0f55c6f8922ce37038f8596d44b3ecf325f1ddc6d9d8a301d7e66",
+  "datasets_fingerprint": null,
+  "selected_document_ids_sha256": null,
+  "index_hash_encoding": "compact JSON array of integers 0 through 4095",
+  "document_id_field_candidates": ["_id", "id", "doc_id"],
+  "text_field_candidates": ["text", "contents", "document"],
+  "runtime_note": "The immutable commit is frozen here. Record the runtime datasets fingerprint and selected document ID hash in every raw run; a non-null datasets_fingerprint in this manifest is enforced when supplied.",
+  "source": "https://huggingface.co/datasets/mteb/RuBQRetrieval"
+}

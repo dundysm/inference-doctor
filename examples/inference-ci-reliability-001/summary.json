@@ -1,0 +1,12 @@
+{
+  "experiment": "inference-ci-reliability-001",
+  "official_result": "INCONCLUSIVE",
+  "baseline_mean_texts_per_second": 2251.217777777778,
+  "baseline_cv_percent": 8.928885907507558,
+  "candidate_mean_texts_per_second": 2156.782222222222,
+  "candidate_cv_percent": 3.863050658469024,
+  "observed_delta_percent": -4.19486539630897,
+  "stability_threshold_percent": 5.0,
+  "regression_threshold_percent": 10.0,
+  "reason": "Baseline measurement noise exceeded the allowed stability threshold."
+}

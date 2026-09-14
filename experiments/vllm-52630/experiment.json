@@ -1,0 +1,59 @@
+{
+  "schema_version": "1",
+  "experiment": "vllm-52630",
+  "public_issue": "https://github.com/vllm-project/vllm/issues/52630",
+  "model": "BAAI/bge-m3",
+  "target_hardware": {
+    "public_issue": "NVIDIA H100 PCIe 80GB",
+    "runpod_target": "NVIDIA H100 SXM 80GB",
+    "hardware_deviation": true
+  },
+  "server": {
+    "port": 8043,
+    "model_name": "bge",
+    "args": [
+      "--served-model-name",
+      "bge",
+      "--runner",
+      "pooling",
+      "--port",
+      "8043",
+      "--gpu-memory-utilization",
+      "0.10",
+      "--api-server-count",
+      "8"
+    ]
+  },
+  "dataset": {
+    "repo_id": "mteb/RuBQRetrieval",
+    "revision": "7229066ed7a617ef50aad51c5a2d95957eaee537",
+    "split": "corpus",
+    "selection": "first 4096 rows in dataset order",
+    "batch_size": 32,
+    "warmup_batches": 4,
+    "concurrency": [16, 32, 64]
+  },
+  "repetitions": 3,
+  "primary_concurrency": 32,
+  "comparison": {
+    "stability_tolerance_percent": 5.0,
+    "throughput_warn_percent": 5.0,
+    "throughput_fail_percent": 10.0
+  },
+  "baseline": {
+    "label": "0.19.0",
+    "vllm_version": "0.19.0",
+    "torch_version": "2.10.0",
+    "environment_path": "/workspace/envs/v0190",
+    "compile_cache": "/workspace/vllm-cache-v0190",
+    "torchinductor_cache": "/workspace/torchinductor-v0190"
+  },
+  "candidate": {
+    "label": "0.21.0",
+    "vllm_version": "0.21.0",
+    "torch_version": "2.11.0",
+    "environment_path": "/workspace/envs/v0210",
+    "compile_cache": "/workspace/vllm-cache-v0210",
+    "torchinductor_cache": "/workspace/torchinductor-v0210"
+  }
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "p01-distributed-tracing",
+    "messages": [{"role": "user", "content": "Write a detailed technical guide to diagnosing a latency regression in a distributed inference service. Cover measurement design, queueing, prefill, decode, cache pressure, confounders, and rollback criteria. Use clear sections and concrete examples."}]
+  },
+  {
+    "id": "p02-database-migration",
+    "messages": [{"role": "user", "content": "Develop a thorough migration plan for moving a high-traffic relational database to a new major version with no planned downtime. Explain preparation, shadow testing, replication, cutover, verification, rollback, and operational risks."}]
+  },
+  {
+    "id": "p03-network-debugging",
+    "messages": [{"role": "user", "content": "Explain a systematic method for debugging intermittent packet loss in a multi-region cloud network. Discuss evidence collection at each layer, competing hypotheses, controlled tests, and how to avoid misleading conclusions."}]
+  },
+  {
+    "id": "p04-storage-design",
+    "messages": [{"role": "user", "content": "Design a durable object-storage service for scientific data. Describe the data model, checksums, replication, erasure coding, metadata consistency, lifecycle policies, disaster recovery, and observability in depth."}]
+  },
+  {
+    "id": "p05-compiler-pipeline",
+    "messages": [{"role": "user", "content": "Give a detailed explanation of a modern optimizing compiler pipeline from parsing through machine-code generation. Include intermediate representations, major optimization passes, register allocation, and correctness testing."}]
+  },
+  {
+    "id": "p06-incident-review",
+    "messages": [{"role": "user", "content": "Write a complete, blameless incident review for a fictional API outage caused by an overloaded dependency. Include timeline, impact, detection, contributing factors, root cause, recovery, and prioritized corrective actions."}]
+  },
+  {
+    "id": "p07-scheduler-design",
+    "messages": [{"role": "user", "content": "Compare scheduling strategies for a shared GPU inference cluster. Discuss fairness, batching efficiency, admission control, long-context isolation, preemption, tail latency, and capacity planning with examples."}]
+  },
+  {
+    "id": "p08-observability-system",
+    "messages": [{"role": "user", "content": "Propose an observability architecture for a large online service. Explain metrics, logs, traces, exemplars, cardinality control, SLOs, alert design, retention, incident workflows, and validation of telemetry quality."}]
+  },
+  {
+    "id": "p09-cache-consistency",
+    "messages": [{"role": "user", "content": "Analyze cache consistency strategies for a globally distributed application. Cover invalidation, versioning, write-through and write-back behavior, stampedes, stale reads, failure modes, and test methodology."}]
+  },
+  {
+    "id": "p10-capacity-experiment",
+    "messages": [{"role": "user", "content": "Create a rigorous capacity experiment for an online text-generation endpoint. Define the workload, controls, warmup, repetitions, latency and throughput statistics, failure handling, reproducibility requirements, and interpretation limits."}]
+  }
+]
