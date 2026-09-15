@@ -19,7 +19,7 @@ jobs:
         run: python -m pip install -e ".[dev]"
       - name: Test
         env:
-          NO_COLOR: "1"
+          TYPER_USE_RICH: "0"
         run: python -m pytest -q
 
   inference-doctor-smoke:
