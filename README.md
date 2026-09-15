@@ -1,47 +1,100 @@
 # Inference Doctor
 
-Inference Doctor is a small, read-only CLI that turns vLLM Prometheus metrics into focused hypotheses about inference bottlenecks. Point it at an existing Prometheus server and it reports whether the current evidence is more consistent with queue/capacity pressure, decode pressure, or meaningful KV-cache pressure.
+**Stop shipping inference regressions.**
 
-It is deliberately conservative: high GPU or KV-cache utilization by itself is not an incident. A finding needs corroborating latency or scheduler evidence, so a busy but healthy server remains a healthy server.
+Inference Doctor is a CLI + GitHub Action that compares repeated LLM inference benchmarks and tells you whether a change is safe to ship.
 
+```text
+PASS          candidate is within your regression threshold
+FAIL          candidate has a measurable performance regression
+INCONCLUSIVE  the benchmark is too noisy or invalid to trust
 ```
-vLLM /metrics  --->  Prometheus  --->  inference-doctor diagnose  --->  terminal report
-    histograms,          PromQL              snapshot + rules          evidence + next test
-    scheduler state
-```
 
-## Quick start
+The key difference from a simple benchmark threshold: **Inference Doctor checks whether the measurement itself is trustworthy before making a merge decision.**
 
-Use a supported Python version (3.11 or newer), clone this repository, and install the CLI into a virtual environment:
+## 5-minute quickstart
+
+Python 3.11+ is required.
 
 ```bash
+git clone https://github.com/dundysm/inference-doctor.git
+cd inference-doctor
 python -m venv .venv
-source .venv/bin/activate  # PowerShell: .venv\\Scripts\\Activate.ps1
+source .venv/bin/activate  # PowerShell: .venv\Scripts\Activate.ps1
 python -m pip install -e .
 ```
 
-With vLLM already being scraped by Prometheus, run:
+Run the checked-in example. **No GPU is required** because the benchmark results are already included.
 
 ```bash
-inference-doctor diagnose \
-  --prometheus http://localhost:9090 \
-  --ttft-slo-ms 400 \
-  --tpot-slo-ms 50
+inference-doctor compare-runs \
+  --baseline examples/quickstart/baseline \
+  --candidate examples/quickstart/candidate \
+  --metric texts_per_second
 ```
 
-The command reads Prometheus only. It does not alter vLLM, Prometheus, or traffic. Omit an SLO only when you intentionally do not want latency-based findings for that dimension.
+You should get a `PASS` result. That is the core workflow: feed Inference Doctor repeated baseline and candidate results, and it returns a CI-safe decision.
 
-To compare two already-produced normalized benchmark results as a CI upgrade guard:
+## Why this exists
 
-```bash
-inference-doctor compare \
-  --baseline baseline.json \
-  --candidate candidate.json
+A PR can pass every functional test and still make inference slower after a vLLM, PyTorch, CUDA, model, batching, KV-cache, quantization, or serving-config change.
+
+A naive gate compares two numbers. That is dangerous because GPU benchmarks can be noisy.
+
+Inference Doctor first checks repeatability, then evaluates the regression:
+
+- baseline CV must be at or below 5% by default
+- candidate CV must be at or below 5% by default
+- failed requests or incomparable benchmark environments make the result `INCONCLUSIVE`
+- a stable 10% directional regression is `FAIL` by default
+- apparent outliers are reported but remain in the official calculation
+
+Example outcomes:
+
+```text
+PASS
+throughput: -2.1%
+measurement quality: stable
 ```
 
-See [docs/upgrade-guard.md](docs/upgrade-guard.md) for the experimental schema, thresholds, output, and exit codes. This command compares benchmark results only; it does not run workloads or change diagnostic behavior.
+```text
+FAIL
+throughput: -13.4%
+measurement quality: stable
+regression threshold: 10%
+```
 
-For repeated measurements, use the measurement-quality MVP:
+```text
+INCONCLUSIVE
+throughput: -7.3%
+baseline CV: 8.9%
+reason: baseline measurements are too noisy to trust
+```
+
+## GitHub Actions
+
+After your benchmark job produces repeated normalized results, use Inference Doctor as the merge gate:
+
+```yaml
+- name: Check inference performance
+  uses: dundysm/inference-doctor@main
+  with:
+    baseline: artifacts/baseline
+    candidate: artifacts/candidate
+    metric: output_token_throughput
+    stability-cv-percent: "5"
+    regression-percent: "10"
+```
+
+The Action writes a readable GitHub step summary and exposes the result plus baseline/candidate means, delta, and CVs as outputs.
+
+Inference Doctor intentionally **does not provision GPUs**. Run your preferred benchmark on your existing GPU/self-hosted runner, save normalized results, then let Inference Doctor make the measurement-quality + regression decision.
+
+See [docs/github-actions.md](docs/github-actions.md).
+
+## CLI
+
+### Compare repeated runs — recommended
 
 ```bash
 inference-doctor compare-runs \
@@ -50,73 +103,61 @@ inference-doctor compare-runs \
   --metric output_token_throughput
 ```
 
-It reports `PASS`, `FAIL`, or `INCONCLUSIVE`. The default rule requires both
-repetition sets to have CV at or below 5% and then treats a 10% directional
-regression as `FAIL`. An unstable measurement is a first-class
-`INCONCLUSIVE` result, not a failed command or an implicit merge approval.
-See [docs/measurement-quality.md](docs/measurement-quality.md) and the
-[sanitized reliability example](examples/inference-ci-reliability-001/README.md).
+Supported metrics include output-token throughput, request throughput, texts/sec, TTFT, TPOT, successful requests, and failed requests.
 
-For a local Docker Desktop / WSL2 setup and an optional disposable RunPod reproduction, see [docs/local-integration.md](docs/local-integration.md). The checked-in compose stack pins the vLLM image used for integration validation rather than relying on `latest`.
+| Result | Meaning | Exit code |
+| --- | --- | ---: |
+| `PASS` | Stable measurements; threshold not crossed | 0 |
+| `FAIL` | Stable measurements; regression threshold crossed | 1 |
+| `INCONCLUSIVE` | Measurement quality/comparability is not good enough to decide | 2 |
+| input error | Invalid schema/files/arguments | 3 |
 
-## What a report looks like
+Use `--json` for machine-readable output.
 
-The CLI prints a compact current snapshot followed by any triggered findings and suggested discriminating experiments. [docs/example-reports.md](docs/example-reports.md) contains four annotated, representative reports:
+See [docs/measurement-quality.md](docs/measurement-quality.md). The [sanitized H100 reliability example](examples/inference-ci-reliability-001/README.md) shows a real `INCONCLUSIVE` result caused by unstable baseline measurements.
 
-- healthy low-load service, including high utilization without a false positive
-- queue/capacity pressure
-- decode pressure
-- KV-cache pressure
+### Compare two normalized files
 
-Queue p95 is included as observational context, not as evidence that increases queue-pressure confidence. Prometheus histogram bucket granularity can make a queue p95 look surprising next to TTFT; see [Limitations](#limitations).
+For simple one-to-one comparisons:
 
-## v0.2 signals
+```bash
+inference-doctor compare \
+  --baseline baseline.json \
+  --candidate candidate.json
+```
 
-Inference Doctor expects the following vLLM Prometheus metric families. A missing metric is rendered as unavailable rather than zero; non-finite Prometheus scalar values (`NaN`, `+Inf`, and `-Inf`) are also rendered as unavailable.
+See [docs/upgrade-guard.md](docs/upgrade-guard.md).
 
-| Area | Metric family / calculation | Reported as |
-| --- | --- | --- |
-| Time to first token | `vllm:time_to_first_token_seconds_bucket` histogram quantile | TTFT p95 |
-| Time per output token | `vllm:inter_token_latency_seconds_bucket` histogram quantile | TPOT p95 |
-| Queue delay | `vllm:request_queue_time_seconds_bucket` histogram quantile | Queue p95 (observational) |
-| Queue delay | `rate(vllm:request_queue_time_seconds_sum[window]) / rate(vllm:request_queue_time_seconds_count[window])` | Queue mean |
-| Prefill duration | `vllm:request_prefill_time_seconds_bucket` histogram quantile | Prefill p95 |
-| Prompt size | `vllm:request_prompt_tokens_bucket` histogram quantile | Prompt tokens p95 |
-| Scheduler activity | `vllm:num_requests_running`, `vllm:num_requests_waiting` | Running / waiting requests |
-| KV occupancy | `vllm:kv_cache_usage_perc` | KV cache usage |
-| Reclamation pressure | `rate(vllm:num_preemptions_total[window]) * 60` | Preemptions per minute |
+## Secondary feature: diagnose a live vLLM service
 
-The default query window is five minutes and can be changed with `--window`.
+Inference Doctor also keeps its original read-only Prometheus diagnostic mode for queue/capacity pressure, decode pressure, and meaningful KV-cache pressure.
 
-## Current diagnostic rules
+```bash
+inference-doctor diagnose \
+  --prometheus http://localhost:9090 \
+  --ttft-slo-ms 400 \
+  --tpot-slo-ms 50
+```
 
-v0.2 intentionally contains only three rule families:
+It reads Prometheus only and does not modify vLLM, Prometheus, or traffic. High GPU/KV utilization alone is not treated as an incident; findings require corroborating evidence.
 
-| Finding | Required condition | Corroborating evidence used for confidence |
-| --- | --- | --- |
-| `QUEUE_PRESSURE` | TTFT p95 exceeds a supplied TTFT SLO | Waiting requests, KV usage at or above 85%, and TPOT remaining within its supplied SLO |
-| `DECODE_PRESSURE` | TPOT p95 exceeds a supplied TPOT SLO | TTFT remaining within its supplied SLO increases confidence |
-| `KV_CACHE_PRESSURE` | KV usage is at least 90% | Waiting requests, preemptions, or TTFT exceeding its supplied SLO |
+See [docs/example-reports.md](docs/example-reports.md) and [docs/local-integration.md](docs/local-integration.md).
 
-`QUEUE_PRESSURE` does **not** score queue p95. The metric remains visible because it is useful for human investigation, but it is too sensitive to histogram buckets to be treated as direct per-request evidence. Similarly, KV occupancy alone cannot trigger `KV_CACHE_PRESSURE`.
+## Scope
 
-## Limitations
+The product is deliberately narrow right now:
 
-- Prometheus histogram quantiles are estimates bounded by bucket resolution. In particular, a coarse queue-time histogram can report a p95 that is larger than an observed TTFT p95 without meaning that a single request spent more time queued than its TTFT.
-- Latency findings depend on the SLOs supplied to the command. Without a TTFT or TPOT SLO, the corresponding latency rule cannot fire.
-- Rate-based values need enough recent traffic and a suitable query window. An unavailable value is not proof of a healthy or idle system.
-- These rules identify plausible bottleneck classes from vLLM telemetry; they do not establish root cause or replace profiling, traces, model-aware capacity tests, or GPU telemetry.
-- The integration setup was validated with `Qwen/Qwen3-0.6B` and `vllm/vllm-openai:v0.29.0-cu129`. Metric names and semantics may change across vLLM releases; validate against your deployed version before operational use.
+> **Unit tests protect correctness. Inference Doctor protects inference performance.**
+
+Not included yet: hosted GPU provisioning, dashboard/SaaS, optimizer, Kubernetes operator, SGLang support, or automatic root-cause analysis.
 
 ## Development
-
-Install development dependencies and run the tests:
 
 ```bash
 python -m pip install -e ".[dev]"
 python -m pytest -q
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for issue and pull-request guidance, [CHANGELOG.md](CHANGELOG.md) for release notes, and [LICENSE](LICENSE) for the Apache-2.0 license.
+See [CONTRIBUTING.md](CONTRIBUTING.md), [CHANGELOG.md](CHANGELOG.md), and [LICENSE](LICENSE).
 
-The first historical regression harness is the read-only reproduction of [vLLM issue #48035](experiments/vllm-48035/README.md).
+Historical experiments that informed the measurement-quality design live under `experiments/`.

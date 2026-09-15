@@ -1,0 +1,125 @@
+name: Inference Doctor
+description: Trustworthy performance regression gate for LLM inference benchmarks
+author: dundysm
+
+branding:
+  icon: activity
+  color: purple
+
+inputs:
+  baseline:
+    description: Directory containing repeated normalized baseline benchmark results
+    required: true
+  candidate:
+    description: Directory containing repeated normalized candidate benchmark results
+    required: true
+  metric:
+    description: Metric to compare
+    required: false
+    default: output_token_throughput
+  stability-cv-percent:
+    description: Maximum allowed coefficient of variation for each side
+    required: false
+    default: "5"
+  regression-percent:
+    description: Regression threshold that causes FAIL after measurements are stable
+    required: false
+    default: "10"
+
+outputs:
+  result:
+    description: PASS, FAIL, or INCONCLUSIVE
+    value: ${{ steps.report.outputs.result }}
+  baseline-mean:
+    description: Baseline mean for the selected metric
+    value: ${{ steps.report.outputs.baseline_mean }}
+  candidate-mean:
+    description: Candidate mean for the selected metric
+    value: ${{ steps.report.outputs.candidate_mean }}
+  delta-percent:
+    description: Candidate percentage delta versus baseline
+    value: ${{ steps.report.outputs.delta_percent }}
+  baseline-cv:
+    description: Baseline coefficient of variation percentage
+    value: ${{ steps.report.outputs.baseline_cv }}
+  candidate-cv:
+    description: Candidate coefficient of variation percentage
+    value: ${{ steps.report.outputs.candidate_cv }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install Inference Doctor
+      shell: bash
+      run: python -m pip install "${{ github.action_path }}"
+
+    - name: Compare repeated benchmark runs
+      id: compare
+      shell: bash
+      run: |
+        set +e
+        inference-doctor compare-runs \
+          --baseline "${{ inputs.baseline }}" \
+          --candidate "${{ inputs.candidate }}" \
+          --metric "${{ inputs.metric }}" \
+          --stability-cv-percent "${{ inputs['stability-cv-percent'] }}" \
+          --regression-percent "${{ inputs['regression-percent'] }}" \
+          --json > "$RUNNER_TEMP/inference-doctor-report.json"
+        status=$?
+        set -e
+        echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+
+    - name: Publish result
+      id: report
+      shell: bash
+      run: |
+        python - <<'PY'
+        import json
+        import os
+        from pathlib import Path
+
+        report_path = Path(os.environ["RUNNER_TEMP"]) / "inference-doctor-report.json"
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        baseline = report["baseline"]
+        candidate = report["candidate"]
+
+        def fmt(value, suffix=""):
+            return "unavailable" if value is None else f"{value:.2f}{suffix}"
+
+        lines = [
+            "## Inference Doctor",
+            "",
+            f"**Result:** `{report['result']}`",
+            f"**Metric:** `{report['metric']}`",
+            "",
+            "| | Baseline | Candidate |",
+            "| --- | ---: | ---: |",
+            f"| Mean | {fmt(baseline['mean'])} | {fmt(candidate['mean'])} |",
+            f"| CV | {fmt(baseline['cv_percent'], '%')} | {fmt(candidate['cv_percent'], '%')} |",
+            f"| Delta |  | {fmt(report['delta_percent'], '%')} |",
+            "",
+            f"Stability threshold: `{report['thresholds']['stability_cv_percent']}%`  ",
+            f"Regression threshold: `{report['thresholds']['regression_percent']}%`",
+        ]
+
+        if report["reasons"]:
+            lines += ["", "**Why:**"] + [f"- {reason}" for reason in report["reasons"]]
+
+        if report["result"] == "INCONCLUSIVE":
+            lines += ["", "No merge recommendation was made because the measurement was not trustworthy enough."]
+
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
+            handle.write("\n".join(lines) + "\n")
+
+        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+            handle.write(f"result={report['result']}\n")
+            handle.write(f"baseline_mean={baseline['mean']}\n")
+            handle.write(f"candidate_mean={candidate['mean']}\n")
+            handle.write(f"delta_percent={report['delta_percent']}\n")
+            handle.write(f"baseline_cv={baseline['cv_percent']}\n")
+            handle.write(f"candidate_cv={candidate['cv_percent']}\n")
+        PY
+
+    - name: Enforce gate
+      shell: bash
+      run: exit "${{ steps.compare.outputs.exit_code }}"

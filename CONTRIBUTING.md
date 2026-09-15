@@ -1,20 +1,36 @@
 # Contributing
 
-Thanks for helping improve Inference Doctor. The project is intentionally a narrow, read-only diagnostic CLI, so changes should stay small and evidence-driven.
+Thanks for helping improve Inference Doctor.
+
+The primary product goal is narrow: **trustworthy performance regression testing for LLM inference**. Changes should make it easier to compare baseline vs candidate performance without giving false confidence when benchmark data is noisy.
+
+The original read-only Prometheus diagnostic mode remains supported as a secondary feature.
 
 ## Issues
 
-Please include the vLLM version, relevant metric names from `/metrics`, the Prometheus query window, supplied SLOs, and a redacted CLI report or JSON output. Do not include API tokens, pod identifiers, public proxy URLs, or customer prompts.
+For inference-CI issues, include:
+
+- selected metric
+- baseline and candidate repetition counts
+- relevant normalized benchmark metadata
+- configured stability/regression thresholds
+- redacted terminal or JSON output
+
+For Prometheus diagnostic issues, include the vLLM version, relevant metric names, query window, supplied SLOs, and a redacted report.
+
+Never include API tokens, credentials, customer prompts, private model data, or cloud access details.
 
 ## Pull requests
 
-- Keep a change focused on one observable behavior, compatibility fix, test, or documentation improvement.
-- Preserve the current diagnostic rules unless the proposal explicitly includes validation evidence and tests.
-- Add or update regression tests for collector and rule behavior.
-- Update documentation when metric queries, supported signals, or report semantics change.
-- Do not commit virtual environments, Prometheus data, model caches, `.env` files, credentials, or cloud-provider artifacts.
+- Keep each change focused on one observable behavior or usability improvement.
+- Preserve `PASS`, `FAIL`, and `INCONCLUSIVE` semantics unless the proposal includes evidence and tests.
+- Do not silently remove statistical outliers from official decisions.
+- Add or update regression tests for behavior changes.
+- Update docs when schemas, thresholds, supported metrics, or exit codes change.
+- Keep GPU/cloud provisioning outside the core comparison engine.
+- Do not commit virtual environments, model caches, credentials, `.env` files, or cloud-provider artifacts.
 
-Before opening a pull request, run:
+Before opening a pull request:
 
 ```bash
 python -m pip install -e ".[dev]"

@@ -1,59 +1,38 @@
-name: Inference CI
+name: CI
 
 on:
+  pull_request:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
-  compare:
-    # The benchmark artifacts must already exist on the self-hosted runner.
-    runs-on: [self-hosted, linux, gpu]
+  test:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install inference-doctor
-        run: python -m pip install -e .
-      - name: Compare repeated benchmark runs
-        id: compare
-        shell: bash
-        run: |
-          set +e
-          inference-doctor compare-runs \
-            --baseline artifacts/baseline \
-            --candidate artifacts/candidate \
-            --metric output_token_throughput \
-            --json > inference-ci-report.json
-          status=$?
-          set -e
-          python - <<'PY'
-          import json
-          import os
-          from pathlib import Path
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: python -m pip install -e ".[dev]"
+      - name: Test
+        env:
+          TYPER_USE_RICH: "0"
+        run: python -m pytest -q
 
-          report = json.loads(Path("inference-ci-report.json").read_text())
-          baseline = report["baseline"]
-          candidate = report["candidate"]
-          lines = [
-              "## Inference CI",
-              "",
-              f"**Result:** `{report['result']}`",
-              f"**Metric:** `{report['metric']}`",
-              "",
-              "| Metric | Baseline | Candidate |",
-              "| --- | ---: | ---: |",
-              f"| Mean | {baseline['mean']:.2f} | {candidate['mean']:.2f} |",
-              f"| Delta |  | {report['delta_percent']:.2f}% |",
-              f"| CV | {baseline['cv_percent']:.2f}% | {candidate['cv_percent']:.2f}% |",
-          ]
-          if report["reasons"]:
-              lines += ["", "**Why:**"]
-              lines += [f"- {reason}" for reason in report["reasons"]]
-          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
-              handle.write("\n".join(lines) + "\n")
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
-              handle.write(f"result={report['result']}\n")
-              handle.write(f"baseline_mean={baseline['mean']}\n")
-              handle.write(f"candidate_mean={candidate['mean']}\n")
-              handle.write(f"delta_percent={report['delta_percent']}\n")
-              handle.write(f"baseline_cv={baseline['cv_percent']}\n")
-              handle.write(f"candidate_cv={candidate['cv_percent']}\n")
-          PY
-          exit "$status"
+  inference-doctor-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Run the no-GPU quickstart through the Action
+        uses: ./
+        with:
+          baseline: examples/quickstart/baseline
+          candidate: examples/quickstart/candidate
+          metric: texts_per_second

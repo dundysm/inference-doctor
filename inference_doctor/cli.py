@@ -31,7 +31,7 @@ from inference_doctor.report import render_report
 
 
 app = typer.Typer(
-    help="Diagnose vLLM bottlenecks and compare benchmark results."
+    help="Gate LLM inference performance regressions and diagnose vLLM bottlenecks."
 )
 
 

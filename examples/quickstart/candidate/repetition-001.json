@@ -1,0 +1,19 @@
+{
+  "schema_version": "1",
+  "environment": {
+    "gpu": "example-gpu",
+    "vllm_version": "0.21.0",
+    "model": "example/model",
+    "image": "quickstart"
+  },
+  "benchmark_parameters": {
+    "concurrency": 32,
+    "workload": "quickstart-fixed"
+  },
+  "metrics": {
+    "texts_per_second": 980.0,
+    "requests": {"successful": 100, "failed": 0},
+    "ttft_ms": {},
+    "tpot_ms": {}
+  }
+}

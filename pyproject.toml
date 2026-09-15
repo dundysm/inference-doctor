@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "inference-doctor"
 version = "0.2.0"
-description = "Diagnose vLLM inference bottlenecks from Prometheus telemetry."
+description = "Trustworthy performance regression testing for LLM inference."
 readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
