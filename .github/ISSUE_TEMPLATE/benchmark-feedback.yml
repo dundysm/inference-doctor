@@ -1,0 +1,77 @@
+name: Benchmark feedback
+description: Tell us what happened when you tried Inference Doctor on a real inference change
+title: "[feedback] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for trying Inference Doctor. Real benchmark runs are the most useful feedback right now.
+
+        Please redact prompts, credentials, private model names, customer data, pod IDs, and cloud access details.
+
+  - type: dropdown
+    id: result
+    attributes:
+      label: Inference Doctor result
+      options:
+        - PASS
+        - FAIL
+        - INCONCLUSIVE
+        - I could not get it running
+    validations:
+      required: true
+
+  - type: input
+    id: stack
+    attributes:
+      label: Inference stack
+      description: Serving engine and relevant versions, if you can share them.
+      placeholder: "vLLM 0.x -> 0.y, PyTorch 2.x, H100"
+
+  - type: input
+    id: metric
+    attributes:
+      label: Metric and thresholds
+      placeholder: "output_token_throughput; 5% stability CV; 10% regression"
+
+  - type: textarea
+    id: change
+    attributes:
+      label: What change were you testing?
+      placeholder: "vLLM upgrade, CUDA change, quantization config, batching change..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Redacted result/output
+      description: Paste the terminal summary or relevant JSON fields. Remove sensitive information first.
+      render: text
+
+  - type: textarea
+    id: friction
+    attributes:
+      label: What was confusing or missing?
+      description: Installation, benchmark normalization, CI wiring, result semantics, or anything else.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ci
+    attributes:
+      label: Would you put this check in your CI today?
+      options:
+        - "Yes"
+        - "Maybe, with changes"
+        - "No"
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why?
+      description: This is the most useful product feedback for us.
+    validations:
+      required: true
