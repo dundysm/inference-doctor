@@ -1,8 +1,11 @@
 # Inference Doctor
 
+[![CI](https://github.com/dundysm/inference-doctor/actions/workflows/inference-ci.yml/badge.svg)](https://github.com/dundysm/inference-doctor/actions/workflows/inference-ci.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
 **Stop shipping inference regressions.**
 
-Inference Doctor is a CLI + GitHub Action that compares repeated LLM inference benchmarks and tells you whether a change is safe to ship.
+Inference Doctor is a CLI + GitHub Action that compares repeated LLM inference benchmarks and turns them into a merge-gate decision:
 
 ```text
 PASS          candidate is within your regression threshold
@@ -10,7 +13,13 @@ FAIL          candidate has a measurable performance regression
 INCONCLUSIVE  the benchmark is too noisy or invalid to trust
 ```
 
-The key difference from a simple benchmark threshold: **Inference Doctor checks whether the measurement itself is trustworthy before making a merge decision.**
+The key difference from a simple benchmark threshold: **Inference Doctor checks whether the measurement itself is trustworthy before making a decision.**
+
+## Who this is for
+
+Use Inference Doctor if you maintain self-hosted inference and regularly change things like vLLM/PyTorch/CUDA versions, model revisions, batching, KV-cache settings, quantization, tensor parallelism, or serving configuration.
+
+Your benchmark harness stays yours. Inference Doctor sits after it and answers: **did this change regress performance, and is the evidence trustworthy enough to decide?**
 
 ## 5-minute quickstart
 
@@ -33,23 +42,21 @@ inference-doctor compare-runs \
   --metric texts_per_second
 ```
 
-You should get a `PASS` result. That is the core workflow: feed Inference Doctor repeated baseline and candidate results, and it returns a CI-safe decision.
+You should get `PASS`. That is the core workflow: repeated baseline results + repeated candidate results -> `PASS`, `FAIL`, or `INCONCLUSIVE`.
+
+Want to use your own benchmark output? Start with the [normalized benchmark format](docs/benchmark-format.md).
 
 ## Why this exists
 
-A PR can pass every functional test and still make inference slower after a vLLM, PyTorch, CUDA, model, batching, KV-cache, quantization, or serving-config change.
+A PR can pass every functional test and still make inference slower. A naive performance gate compares two numbers, but GPU benchmarks can be noisy enough to create false regressions or false confidence.
 
-A naive gate compares two numbers. That is dangerous because GPU benchmarks can be noisy.
+Inference Doctor checks repeatability first, then evaluates the regression. By default:
 
-Inference Doctor first checks repeatability, then evaluates the regression:
-
-- baseline CV must be at or below 5% by default
-- candidate CV must be at or below 5% by default
+- baseline CV must be at or below 5%
+- candidate CV must be at or below 5%
 - failed requests or incomparable benchmark environments make the result `INCONCLUSIVE`
-- a stable 10% directional regression is `FAIL` by default
+- a stable 10% directional regression is `FAIL`
 - apparent outliers are reported but remain in the official calculation
-
-Example outcomes:
 
 ```text
 PASS
@@ -86,11 +93,11 @@ After your benchmark job produces repeated normalized results, use Inference Doc
     regression-percent: "10"
 ```
 
-The Action writes a readable GitHub step summary and exposes the result plus baseline/candidate means, delta, and CVs as outputs.
+The Action writes a readable GitHub step summary and exposes the result, baseline/candidate means, delta, and CVs as outputs. `FAIL` and `INCONCLUSIVE` both fail the Action step so noisy evidence cannot silently approve a change.
 
 Inference Doctor intentionally **does not provision GPUs**. Run your preferred benchmark on your existing GPU/self-hosted runner, save normalized results, then let Inference Doctor make the measurement-quality + regression decision.
 
-See [docs/github-actions.md](docs/github-actions.md).
+See [GitHub Actions integration](docs/github-actions.md).
 
 ## CLI
 
@@ -112,13 +119,13 @@ Supported metrics include output-token throughput, request throughput, texts/sec
 | `INCONCLUSIVE` | Measurement quality/comparability is not good enough to decide | 2 |
 | input error | Invalid schema/files/arguments | 3 |
 
-Use `--json` for machine-readable output.
+Use `--json` for machine-readable output. See [measurement quality](docs/measurement-quality.md) for the decision semantics and [benchmark format](docs/benchmark-format.md) for the input contract.
 
-See [docs/measurement-quality.md](docs/measurement-quality.md). The [sanitized H100 reliability example](examples/inference-ci-reliability-001/README.md) shows a real `INCONCLUSIVE` result caused by unstable baseline measurements.
+The [sanitized H100 reliability example](examples/inference-ci-reliability-001/README.md) preserves a real experiment where the correct result was `INCONCLUSIVE` because baseline measurements were unstable.
 
 ### Compare two normalized files
 
-For simple one-to-one comparisons:
+For a simple one-to-one comparison:
 
 ```bash
 inference-doctor compare \
@@ -126,7 +133,7 @@ inference-doctor compare \
   --candidate candidate.json
 ```
 
-See [docs/upgrade-guard.md](docs/upgrade-guard.md).
+See [upgrade guard](docs/upgrade-guard.md).
 
 ## Secondary feature: diagnose a live vLLM service
 
@@ -141,15 +148,19 @@ inference-doctor diagnose \
 
 It reads Prometheus only and does not modify vLLM, Prometheus, or traffic. High GPU/KV utilization alone is not treated as an incident; findings require corroborating evidence.
 
-See [docs/example-reports.md](docs/example-reports.md) and [docs/local-integration.md](docs/local-integration.md).
+See [example reports](docs/example-reports.md) and [local integration](docs/local-integration.md).
+
+## Try it on a real change
+
+The project is at the stage where real-world feedback matters more than more features. If you run Inference Doctor on an actual inference change, open a **Benchmark feedback** issue and tell us what worked, what was confusing, and whether you would put the gate in CI.
+
+Please redact prompts, credentials, private model names, customer data, and cloud access details.
 
 ## Scope
 
-The product is deliberately narrow right now:
-
 > **Unit tests protect correctness. Inference Doctor protects inference performance.**
 
-Not included yet: hosted GPU provisioning, dashboard/SaaS, optimizer, Kubernetes operator, SGLang support, or automatic root-cause analysis.
+Deliberately not included yet: hosted GPU provisioning, dashboard/SaaS, optimizer, Kubernetes operator, SGLang support, or automatic root-cause analysis.
 
 ## Development
 
