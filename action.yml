@@ -62,8 +62,8 @@ runs:
           --baseline "${{ inputs.baseline }}" \
           --candidate "${{ inputs.candidate }}" \
           --metric "${{ inputs.metric }}" \
-          --stability-cv-percent "${{ inputs.stability-cv-percent }}" \
-          --regression-percent "${{ inputs.regression-percent }}" \
+          --stability-cv-percent "${{ inputs['stability-cv-percent'] }}" \
+          --regression-percent "${{ inputs['regression-percent'] }}" \
           --json > "$RUNNER_TEMP/inference-doctor-report.json"
         status=$?
         set -e
