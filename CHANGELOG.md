@@ -2,19 +2,24 @@
 
 ## Unreleased
 
+## 0.3.0 - 2026-09-14
+
 ### Added
 
 - Reusable GitHub Action for repeated-run inference regression gating.
 - No-GPU quickstart fixtures for trying `compare-runs` locally in minutes.
 - GitHub Actions documentation and PR smoke coverage.
+- Measurement-quality gate with first-class `PASS`, `FAIL`, and `INCONCLUSIVE` outcomes.
+- Repeated-run statistics including mean, median, sample standard deviation, CV, min/max, and descriptive outlier flags.
+- Optional environment telemetry helpers for benchmark investigations.
 - Experimental `inference-doctor compare` upgrade guard for normalized benchmark result files, with configurable regression thresholds, terminal and JSON output, and CI exit codes.
-- Auditable reproduction harness for the FP16 vLLM 0.19.1-to-0.24.0 regression reported in public issue #48035.
-- External-server and same-Pod RunPod execution paths for the #48035 harness, including GPU UUID continuity validation.
+- Auditable historical regression and benchmark-reliability experiments that informed the measurement-quality design.
 
 ### Changed
 
-- Repositioned the project around trustworthy inference performance CI: `PASS`, `FAIL`, or `INCONCLUSIVE` after measurement-quality checks.
+- Repositioned the project around trustworthy inference performance CI: measurement quality is checked before a merge decision is made.
 - `compare-runs` is now the primary documented workflow; Prometheus diagnosis remains supported as a secondary feature.
+- Apparent outliers remain included in official decisions rather than being silently removed.
 
 ## 0.2.0 - 2026-09-13
 

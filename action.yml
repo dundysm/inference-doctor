@@ -28,7 +28,7 @@ inputs:
 
 outputs:
   result:
-    description: PASS, FAIL, or INCONCLUSIVE
+    description: PASS, FAIL, INCONCLUSIVE, or ERROR
     value: ${{ steps.report.outputs.result }}
   baseline-mean:
     description: Baseline mean for the selected metric
@@ -64,7 +64,9 @@ runs:
           --metric "${{ inputs.metric }}" \
           --stability-cv-percent "${{ inputs['stability-cv-percent'] }}" \
           --regression-percent "${{ inputs['regression-percent'] }}" \
-          --json > "$RUNNER_TEMP/inference-doctor-report.json"
+          --json \
+          > "$RUNNER_TEMP/inference-doctor-report.json" \
+          2> "$RUNNER_TEMP/inference-doctor-error.txt"
         status=$?
         set -e
         echo "exit_code=$status" >> "$GITHUB_OUTPUT"
@@ -78,7 +80,24 @@ runs:
         import os
         from pathlib import Path
 
-        report_path = Path(os.environ["RUNNER_TEMP"]) / "inference-doctor-report.json"
+        temp = Path(os.environ["RUNNER_TEMP"])
+        report_path = temp / "inference-doctor-report.json"
+        error_path = temp / "inference-doctor-error.txt"
+
+        def set_output(key, value):
+            with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+                handle.write(f"{key}={'' if value is None else value}\n")
+
+        if not report_path.exists() or not report_path.read_text(encoding="utf-8").strip():
+            error = error_path.read_text(encoding="utf-8").strip() if error_path.exists() else "Inference Doctor did not produce a report."
+            with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
+                handle.write("## Inference Doctor\n\n**Result:** `ERROR`\n\n")
+                handle.write(f"```text\n{error}\n```\n")
+            set_output("result", "ERROR")
+            for key in ("baseline_mean", "candidate_mean", "delta_percent", "baseline_cv", "candidate_cv"):
+                set_output(key, None)
+            raise SystemExit(0)
+
         report = json.loads(report_path.read_text(encoding="utf-8"))
         baseline = report["baseline"]
         candidate = report["candidate"]
@@ -111,13 +130,12 @@ runs:
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
             handle.write("\n".join(lines) + "\n")
 
-        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
-            handle.write(f"result={report['result']}\n")
-            handle.write(f"baseline_mean={baseline['mean']}\n")
-            handle.write(f"candidate_mean={candidate['mean']}\n")
-            handle.write(f"delta_percent={report['delta_percent']}\n")
-            handle.write(f"baseline_cv={baseline['cv_percent']}\n")
-            handle.write(f"candidate_cv={candidate['cv_percent']}\n")
+        set_output("result", report["result"])
+        set_output("baseline_mean", baseline["mean"])
+        set_output("candidate_mean", candidate["mean"])
+        set_output("delta_percent", report["delta_percent"])
+        set_output("baseline_cv", baseline["cv_percent"])
+        set_output("candidate_cv", candidate["cv_percent"])
         PY
 
     - name: Enforce gate

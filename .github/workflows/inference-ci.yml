@@ -30,9 +30,23 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+
       - name: Run the no-GPU quickstart through the Action
         uses: ./
         with:
           baseline: examples/quickstart/baseline
           candidate: examples/quickstart/candidate
           metric: texts_per_second
+
+      - name: Exercise invalid-input reporting
+        id: invalid
+        continue-on-error: true
+        uses: ./
+        with:
+          baseline: examples/quickstart/does-not-exist
+          candidate: examples/quickstart/candidate
+          metric: texts_per_second
+
+      - name: Verify invalid input is reported as ERROR
+        shell: bash
+        run: test "${{ steps.invalid.outputs.result }}" = "ERROR"

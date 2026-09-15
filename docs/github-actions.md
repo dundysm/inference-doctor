@@ -22,8 +22,9 @@ The Action returns:
 - `PASS` when both sides are stable and the regression threshold is not crossed
 - `FAIL` when both sides are stable and the candidate crosses the regression threshold
 - `INCONCLUSIVE` when the comparison is not trustworthy enough to make a merge decision
+- `ERROR` for invalid input or execution errors
 
-`FAIL` and `INCONCLUSIVE` both fail the GitHub Action step. This is intentional: an untrustworthy benchmark should not silently approve a change.
+`FAIL`, `INCONCLUSIVE`, and `ERROR` fail the GitHub Action step. This is intentional: an untrustworthy or invalid benchmark should not silently approve a change.
 
 ## Typical self-hosted GPU workflow
 
@@ -39,7 +40,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Your own benchmark harness should produce repeated normalized JSON files.
+      # Your own benchmark harness produces repeated normalized JSON files.
       - name: Benchmark baseline and candidate
         run: ./scripts/run-inference-benchmarks.sh
 
@@ -62,11 +63,15 @@ The Action exposes:
 - `baseline-cv`
 - `candidate-cv`
 
-It also writes a Markdown summary to the GitHub Actions job summary.
+It also writes a Markdown summary to the GitHub Actions job summary. Invalid input is surfaced as a readable `ERROR` summary instead of a JSON parsing failure.
 
 ## Input contract
 
-Each baseline/candidate directory contains repeated normalized JSON benchmark results. Environment and workload parameters must be comparable across runs. See `examples/quickstart/` for the smallest working example and `docs/measurement-quality.md` for the full decision semantics.
+Each baseline/candidate directory contains repeated normalized JSON benchmark results. At least two repetitions per side are required for a stability decision.
+
+See [benchmark-format.md](benchmark-format.md) for the exact JSON contract and `examples/quickstart/` for the smallest copyable example.
+
+Environment and workload parameters must be comparable across runs. See [measurement-quality.md](measurement-quality.md) for the full decision semantics.
 
 ## Why INCONCLUSIVE exists
 
