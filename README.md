@@ -77,8 +77,11 @@ No converter needed. Put each side's runs in a directory and point `compare-runs
 inference-doctor compare-runs \
   --baseline results/main \
   --candidate results/my-branch \
-  --metric ttft_p99_ms
+  --metric output_token_throughput --metric ttft_p99_ms
 ```
+
+Repeat `--metric` to gate on several at once: the result is `FAIL` if any metric fails,
+`INCONCLUSIVE` if none fails but one cannot be decided, and `PASS` only when all pass.
 
 | Tool | What it reads |
 | --- | --- |
@@ -94,7 +97,8 @@ or record it in the results (for vLLM, `--metadata gpu=...`). The
 [input formats](docs/input-formats.md) page lists every field read from each tool.
 
 [`examples/vllm-bench-serve`](examples/vllm-bench-serve/README.md) is a small example in
-vLLM's format where throughput passes and mean TTFT fails.
+vLLM's format where throughput passes and TTFT fails, so gating on both catches what a
+throughput-only gate would let through.
 
 ## In GitHub Actions
 
@@ -106,7 +110,7 @@ Run your benchmark on your own GPU runner, then gate on the results:
   with:
     baseline: results/main
     candidate: results/my-branch
-    metric: output_token_throughput
+    metric: output_token_throughput, ttft_p99_ms
     min-repetitions: "5"
 ```
 
@@ -136,11 +140,11 @@ to stay close to that.
 
 | Command | What it does |
 | --- | --- |
-| `compare-runs` | The gate: repeated baseline and candidate runs, one metric, `PASS`, `FAIL` or `INCONCLUSIVE`. |
+| `compare-runs` | The gate: repeated baseline and candidate runs, one or more metrics, `PASS`, `FAIL` or `INCONCLUSIVE`. |
 | `compare` | One normalized file against another, every metric, `PASS`, `WARN`, `FAIL` or `UNSTABLE`. A single run per side cannot measure noise; prefer `compare-runs`. See [upgrade guard](docs/upgrade-guard.md). |
 | `diagnose` | Experimental. Reads a live vLLM server's Prometheus metrics and reports queue, decode and KV-cache pressure. Read-only. See [example reports](docs/example-reports.md). |
 
-`compare-runs` options: `--metric`, `--regression-percent` (10), `--confidence` (0.90),
+`compare-runs` options: `--metric` (repeatable), `--regression-percent` (10), `--confidence` (0.90),
 `--min-repetitions` (3), `--stability-cv-percent` (an optional CV ceiling, off),
 `--format` (auto), `--gpu`, `--model`, `--guidellm-benchmark` and `--json`.
 

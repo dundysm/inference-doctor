@@ -111,6 +111,21 @@ jobs:
           RESULT: ${{ steps.vllm.outputs.result }}
         run: test "$RESULT" = "PASS"
 
+      - name: Gating throughput and TTFT p99 together fails on TTFT
+        id: multi
+        continue-on-error: true
+        uses: ./
+        with:
+          baseline: examples/vllm-bench-serve/baseline
+          candidate: examples/vllm-bench-serve/candidate
+          metric: output_token_throughput, ttft_p99_ms
+
+      - name: The Action reports FAIL for the combined gate
+        env:
+          RESULT: ${{ steps.multi.outputs.result }}
+          OUTCOME: ${{ steps.multi.outcome }}
+        run: test "$RESULT" = "FAIL" && test "$OUTCOME" = "failure"
+
       - name: A missing directory is reported as ERROR
         id: invalid
         continue-on-error: true

@@ -5,16 +5,17 @@ a clone (`python -m pip install .`). See the [README](README.md) for what the to
 
 ## What works
 
-- **The gate.** `compare-runs` validates the comparison (environment, failed requests,
-  missing metrics, at least 3 runs per side), then decides from a 90% confidence
-  interval for the regression: `PASS`, `FAIL` or `INCONCLUSIVE`, each with a reason.
+- **The gate.** `compare-runs`, on one metric or several at once, validates the
+  comparison (environment, failed requests, missing metrics, at least 3 runs per side),
+  then decides from a 90% confidence interval for the regression: `PASS`, `FAIL` or
+  `INCONCLUSIVE`, each with a reason.
 - **Tool formats.** It reads `vllm bench serve` results (including `--append-result`),
   AIPerf and GenAI-Perf exports, GuideLLM `benchmarks.json` and SGLang JSONL directly,
   plus the normalized schema for other harnesses.
 - **CI.** A composite GitHub Action with a job summary, outputs, and an exit code that
   fails the step on `FAIL`, `INCONCLUSIVE` or an error. One exit-code scheme across all
   commands; `--version`.
-- **Checks.** 129 tests, ruff, and mypy run in CI on Python 3.11 and 3.14 on Linux and
+- **Checks.** 137 tests, ruff, and mypy run in CI on Python 3.11 and 3.14 on Linux and
   3.14 on macOS and Windows, plus the Action itself on the checked-in examples.
 
 ## Measured
@@ -36,8 +37,6 @@ a clone (`python -m pip install .`). See the [README](README.md) for what the to
 ## Limitations
 
 - No project other than this one runs the gate in CI yet.
-- One metric per run of `compare-runs`; gating on throughput and TTFT p99 together takes
-  two steps.
 - `--gpu` and `--model` label both sides at once, so they cannot catch a run on the wrong
   GPU. Only GPU names recorded in the results (vLLM `--metadata`, AIPerf telemetry) are
   compared.

@@ -13,10 +13,16 @@ def _signed(value: float | None) -> str:
     return "unavailable" if value is None else f"{value:+.2f}%"
 
 
+STYLES = {"PASS": "green", "FAIL": "red", "INCONCLUSIVE": "yellow"}
+
+
 def render_quality_report(report: dict, console: Console | None = None) -> None:
     console = console or Console()
+    if "comparisons" in report:
+        _render_multi(report, console)
+        return
     status = report["result"]
-    style = {"PASS": "green", "FAIL": "red", "INCONCLUSIVE": "yellow"}[status]
+    style = STYLES[status]
     console.print("[bold]INFERENCE CI[/bold]")
     console.print(f"RESULT: [{style}]{status}[/]")
     direction = "lower is better" if report["lower_is_better"] else "higher is better"
@@ -57,7 +63,7 @@ def render_quality_report(report: dict, console: Console | None = None) -> None:
     if interval["available"]:
         console.print(
             f"{thresholds['confidence']:.0%} confidence interval for the regression: "
-            f"{_signed(interval['regression_percent_low'])} to "
+            f"{_signed(interval['regression_percent_low'])}.."
             f"{_signed(interval['regression_percent_high'])}"
         )
     ceiling = thresholds["stability_cv_percent"]
@@ -78,5 +84,55 @@ def render_quality_report(report: dict, console: Console | None = None) -> None:
         console.print(f"Note: {note}.")
     if report["baseline"]["outlier_paths"] or report["candidate"]["outlier_paths"]:
         console.print("Outlier flags are descriptive only; all observations remain included.")
+    if status == "INCONCLUSIVE":
+        console.print("No merge recommendation was made.")
+
+
+def _render_multi(report: dict, console: Console) -> None:
+    status = report["result"]
+    thresholds = report["thresholds"]
+    console.print("[bold]INFERENCE CI[/bold]")
+    console.print(f"RESULT: [{STYLES[status]}]{status}[/]")
+    formats = {report["input"]["baseline"]["format"], report["input"]["candidate"]["format"]}
+    console.print(f"Input: {' / '.join(sorted(formats))} results")
+
+    table = Table(box=box.SIMPLE_HEAD, show_lines=False)
+    table.add_column("Metric", style="bold")
+    table.add_column("Runs", justify="right")
+    table.add_column("Baseline", justify="right")
+    table.add_column("Candidate", justify="right")
+    table.add_column(f"Regression, {thresholds['confidence']:.0%} CI", justify="right")
+    table.add_column("Result")
+    for comparison in report["comparisons"]:
+        interval = comparison["confidence_interval"]
+        span = (
+            f"{_signed(interval['regression_percent_low'])}.."
+            f"{_signed(interval['regression_percent_high'])}"
+            if interval["available"]
+            else "unavailable"
+        )
+        result = comparison["result"]
+        table.add_row(
+            comparison["metric"],
+            f"{comparison['baseline']['count']} / {comparison['candidate']['count']}",
+            _number(comparison["baseline"]["mean"]),
+            _number(comparison["candidate"]["mean"]),
+            span,
+            f"[{STYLES[result]}]{result}[/]",
+        )
+    console.print(table)
+    console.print(
+        "Columns show means. Regression is positive when worse; threshold "
+        f"{thresholds['regression_percent']:g}%  |  "
+        f"Minimum repetitions: {thresholds['min_repetitions']}"
+    )
+    if report["reasons"]:
+        console.print("Why:")
+        for reason in report["reasons"]:
+            console.print(f"- {reason}")
+    else:
+        console.print("Why: every metric passed.")
+    for note in report["notes"]:
+        console.print(f"Note: {note}.")
     if status == "INCONCLUSIVE":
         console.print("No merge recommendation was made.")

@@ -14,6 +14,10 @@
 - The quickstart has five repetitions per side and a `regressed-candidate` directory that demonstrates `FAIL`.
 - The Action passes its inputs to the shell through environment variables instead of interpolating them into the script.
 
+### Added: gate several metrics at once
+
+- `--metric` can be repeated (Action: a comma-separated `metric` input). Each metric is compared in full; the combined result is `FAIL` if any metric fails, `INCONCLUSIVE` if none fails but one is inconclusive, and `PASS` only if all pass. The report notes that each extra metric adds a chance of a false alarm. With one metric the report is unchanged; with several it has `metrics` and `comparisons`. The Action's job summary has one row per metric, and a new `report` output holds the JSON report path.
+
 ### Added: read benchmark tools' own output
 
 - `compare-runs` reads the result files of `vllm bench serve --save-result` (including `--append-result` JSON Lines), NVIDIA AIPerf and GenAI-Perf, GuideLLM `benchmarks.json`, and SGLang `bench_serving`, with no conversion step. `--format auto` (the default) detects the format per file; `--format` forces one. See `docs/input-formats.md`.

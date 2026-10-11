@@ -12,10 +12,12 @@ It does not provision GPUs or decide how to benchmark your model. Your workflow 
   with:
     baseline: artifacts/baseline
     candidate: artifacts/candidate
-    metric: output_token_throughput
+    metric: output_token_throughput, ttft_p99_ms
     regression-percent: "10"
     min-repetitions: "5"
 ```
+
+`metric` takes one metric or several separated by commas. With several, the step fails if any metric fails, and the job summary has one row per metric.
 
 The Action returns:
 
@@ -56,13 +58,16 @@ jobs:
 
 The Action exposes:
 
-- `result`
+- `result`: the combined verdict
+- `report`: the path to the full JSON report
 - `baseline-mean`
 - `candidate-mean`
 - `delta-percent`
 - `regression-percent-low` and `regression-percent-high`: the confidence interval for the regression, positive is worse
 - `baseline-cv`
 - `candidate-cv`
+
+The per-metric outputs describe the first metric when several are given; read the JSON report for the others.
 
 It also writes a Markdown summary to the GitHub Actions job summary. Invalid input is surfaced as a readable `ERROR` summary instead of a JSON parsing failure.
 

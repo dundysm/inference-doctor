@@ -67,6 +67,19 @@ optional extra ceiling for teams that want one.
 rates for 3, 5 and 10 repetitions at several noise levels and true changes. Use 5 or
 more repetitions per side.
 
+### Several metrics
+
+Repeat `--metric` to gate on several metrics in one run. Each metric gets the full
+decision above, and the combined result is `FAIL` if any metric fails, `INCONCLUSIVE` if
+none fails but one is inconclusive, and `PASS` only if every metric passes.
+
+Each additional metric is one more chance of a false alarm. With no real change, the
+chance that at least one of k metrics FAILs is at most k times the per-metric rate
+(about 5% each at the threshold, far less below it). Gate on the few metrics you would
+act on, such as throughput and TTFT p99, rather than all of them. The `--json` report for
+several metrics has the combined `result` and one full comparison per metric under
+`comparisons`.
+
 ### Assumptions
 
 The interval assumes the repetitions of each side are independent and roughly normal.

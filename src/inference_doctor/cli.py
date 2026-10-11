@@ -246,6 +246,11 @@ def compare_command(
         raise typer.Exit(EXIT_NO_DECISION)
 
 
+METRIC_HELP = "Metric to compare; repeat to gate on several (FAIL if any fails). Choices: " + (
+    ", ".join(metric_choices())
+)
+
+
 @app.command(name="compare-runs")
 def compare_runs_command(
     baseline: Path = typer.Option(
@@ -264,10 +269,10 @@ def compare_runs_command(
         readable=True,
         help="Directory of repeated candidate results, one file or JSONL line per run.",
     ),
-    metric: str = typer.Option(
-        "output_token_throughput",
+    metric: list[str] = typer.Option(
+        ["output_token_throughput"],
         "--metric",
-        help="Metric to compare: " + ", ".join(metric_choices()),
+        help=METRIC_HELP,
     ),
     regression_percent: float = typer.Option(
         10.0,

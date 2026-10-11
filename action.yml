@@ -30,7 +30,7 @@ inputs:
     required: false
     default: ""
   metric:
-    description: Metric to compare
+    description: Metric to compare, or several separated by commas (FAIL if any fails)
     required: false
     default: output_token_throughput
   regression-percent:
@@ -55,25 +55,28 @@ outputs:
     description: PASS, FAIL, INCONCLUSIVE, or ERROR
     value: ${{ steps.report.outputs.result }}
   baseline-mean:
-    description: Baseline mean for the selected metric
+    description: Baseline mean for the selected metric (the first metric when several are given)
     value: ${{ steps.report.outputs.baseline_mean }}
   candidate-mean:
-    description: Candidate mean for the selected metric
+    description: Candidate mean for the selected metric (the first metric when several are given)
     value: ${{ steps.report.outputs.candidate_mean }}
   delta-percent:
-    description: Candidate percentage delta versus baseline
+    description: Candidate percentage delta versus baseline (the first metric when several are given)
     value: ${{ steps.report.outputs.delta_percent }}
   regression-percent-low:
-    description: Lower bound of the confidence interval for the regression (positive is worse)
+    description: Lower bound of the confidence interval for the regression (positive is worse) (the first metric when several are given)
     value: ${{ steps.report.outputs.regression_percent_low }}
   regression-percent-high:
-    description: Upper bound of the confidence interval for the regression (positive is worse)
+    description: Upper bound of the confidence interval for the regression (positive is worse) (the first metric when several are given)
     value: ${{ steps.report.outputs.regression_percent_high }}
   baseline-cv:
-    description: Baseline coefficient of variation percentage
+    description: Baseline coefficient of variation percentage (the first metric when several are given)
     value: ${{ steps.report.outputs.baseline_cv }}
+  report:
+    description: Path to the full JSON report
+    value: ${{ steps.report.outputs.report }}
   candidate-cv:
-    description: Candidate coefficient of variation percentage
+    description: Candidate coefficient of variation percentage (the first metric when several are given)
     value: ${{ steps.report.outputs.candidate_cv }}
 
 runs:
@@ -106,13 +109,16 @@ runs:
           compare-runs
           --baseline "$INPUT_BASELINE"
           --candidate "$INPUT_CANDIDATE"
-          --metric "$INPUT_METRIC"
           --regression-percent "$INPUT_REGRESSION_PERCENT"
           --confidence "$INPUT_CONFIDENCE"
           --min-repetitions "$INPUT_MIN_REPETITIONS"
           --format "$INPUT_FORMAT"
           --json
         )
+        IFS=', ' read -r -a metrics <<< "$INPUT_METRIC"
+        for metric in "${metrics[@]}"; do
+          if [ -n "$metric" ]; then args+=(--metric "$metric"); fi
+        done
         if [ -n "$INPUT_STABILITY_CV_PERCENT" ]; then
           args+=(--stability-cv-percent "$INPUT_STABILITY_CV_PERCENT")
         fi
@@ -161,14 +167,14 @@ runs:
                 handle.write("## Inference Doctor\n\n**Result:** `ERROR`\n\n")
                 handle.write(f"```text\n{error}\n```\n")
             set_output("result", "ERROR")
+            set_output("report", None)
             for key in keys:
                 set_output(key, None)
             raise SystemExit(0)
 
         report = json.loads(report_path.read_text(encoding="utf-8"))
-        baseline = report["baseline"]
-        candidate = report["candidate"]
-        interval = report["confidence_interval"]
+        comparisons = report.get("comparisons", [report])
+        first = comparisons[0]
         thresholds = report["thresholds"]
 
         def fmt(value, suffix=""):
@@ -177,26 +183,30 @@ runs:
         def signed(value):
             return "unavailable" if value is None else f"{value:+.2f}%"
 
-        interval_text = (
-            f"{signed(interval['regression_percent_low'])} to {signed(interval['regression_percent_high'])}"
-            if interval["available"]
-            else "unavailable"
-        )
+        def interval_text(comparison):
+            interval = comparison["confidence_interval"]
+            if not interval["available"]:
+                return "unavailable"
+            return f"{signed(interval['regression_percent_low'])} to {signed(interval['regression_percent_high'])}"
+
         lines = [
             "## Inference Doctor",
             "",
             f"**Result:** `{report['result']}`",
-            f"**Metric:** `{report['metric']}`",
             "",
-            "| | Baseline | Candidate |",
-            "| --- | ---: | ---: |",
-            f"| Repetitions | {baseline['count']} | {candidate['count']} |",
-            f"| Mean | {fmt(baseline['mean'])} | {fmt(candidate['mean'])} |",
-            f"| CV | {fmt(baseline['cv_percent'], '%')} | {fmt(candidate['cv_percent'], '%')} |",
+            f"| Metric | Runs | Baseline mean | Candidate mean | Delta | Regression, {thresholds['confidence']:.0%} interval | Result |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | --- |",
+        ]
+        for comparison in comparisons:
+            lines.append(
+                f"| `{comparison['metric']}` | {comparison['baseline']['count']} / {comparison['candidate']['count']} "
+                f"| {fmt(comparison['baseline']['mean'])} | {fmt(comparison['candidate']['mean'])} "
+                f"| {signed(comparison['delta_percent'])} | {interval_text(comparison)} | `{comparison['result']}` |"
+            )
+        lines += [
             "",
-            f"Delta: `{signed(report['delta_percent'])}`  ",
-            f"{thresholds['confidence']:.0%} confidence interval for the regression (positive is worse): `{interval_text}`  ",
-            f"Regression threshold: `{thresholds['regression_percent']:g}%`",
+            f"Regression is positive when worse. Threshold: `{thresholds['regression_percent']:g}%`. "
+            f"Minimum repetitions: `{thresholds['min_repetitions']}`.",
         ]
 
         if report["reasons"]:
@@ -212,14 +222,16 @@ runs:
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
             handle.write("\n".join(lines) + "\n")
 
+        interval = first["confidence_interval"]
         set_output("result", report["result"])
-        set_output("baseline_mean", baseline["mean"])
-        set_output("candidate_mean", candidate["mean"])
-        set_output("delta_percent", report["delta_percent"])
+        set_output("report", str(report_path))
+        set_output("baseline_mean", first["baseline"]["mean"])
+        set_output("candidate_mean", first["candidate"]["mean"])
+        set_output("delta_percent", first["delta_percent"])
         set_output("regression_percent_low", interval.get("regression_percent_low"))
         set_output("regression_percent_high", interval.get("regression_percent_high"))
-        set_output("baseline_cv", baseline["cv_percent"])
-        set_output("candidate_cv", candidate["cv_percent"])
+        set_output("baseline_cv", first["baseline"]["cv_percent"])
+        set_output("candidate_cv", first["candidate"]["cv_percent"])
         PY
 
     - name: Enforce gate

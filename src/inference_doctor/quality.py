@@ -192,15 +192,8 @@ def load_repeated_runs(
 ) -> tuple[list[RepeatedRun], LoadedDirectory]:
     if metric not in METRICS:
         raise QualityInputError(f"Unknown metric '{metric}'. Choose one of: {', '.join(METRICS)}")
-    try:
-        loaded = load_directory(directory, format, options)
-    except BenchmarkResultError as exc:
-        raise QualityInputError(str(exc)) from exc
-    runs = [
-        RepeatedRun(item.path, item.result, _metric_value(item.result, metric), item.record)
-        for item in loaded.records
-    ]
-    return runs, loaded
+    loaded = _load(directory, format, options)
+    return _runs(loaded, metric), loaded
 
 
 def _percentile(values: list[float], quantile: float) -> float:
@@ -467,33 +460,111 @@ def _interval_dict(decision: RegressionDecision | None, confidence: float) -> di
     }
 
 
+def _load(directory: Path, format: str, options: SourceOptions | None) -> LoadedDirectory:
+    try:
+        return load_directory(directory, format, options)
+    except BenchmarkResultError as exc:
+        raise QualityInputError(str(exc)) from exc
+
+
+def _runs(loaded: LoadedDirectory, metric: str) -> list[RepeatedRun]:
+    return [
+        RepeatedRun(item.path, item.result, _metric_value(item.result, metric), item.record)
+        for item in loaded.records
+    ]
+
+
+def combine_results(results: list[str]) -> str:
+    """FAIL if any metric fails, else INCONCLUSIVE if any is, else PASS."""
+    if "FAIL" in results:
+        return "FAIL"
+    if "INCONCLUSIVE" in results:
+        return "INCONCLUSIVE"
+    return "PASS"
+
+
 def load_and_compare_directories(
     baseline_dir: Path,
     candidate_dir: Path,
     *,
-    metric: str = "output_token_throughput",
+    metric: str | list[str] = "output_token_throughput",
     thresholds: QualityThresholds = QualityThresholds(),
     format: str = "auto",
     options: SourceOptions | None = None,
 ) -> dict[str, Any]:
-    baseline, baseline_source = load_repeated_runs(
-        baseline_dir, metric, format=format, options=options
-    )
-    candidate, candidate_source = load_repeated_runs(
-        candidate_dir, metric, format=format, options=options
-    )
-    report = compare_repeated_runs(baseline, candidate, metric=metric, thresholds=thresholds)
-    report["input"] = {
+    """Compare one metric, or several.
+
+    With one metric the report is that metric's comparison. With several, the report
+    has the combined `result` and one full comparison per metric under `comparisons`.
+    """
+    metrics = [metric] if isinstance(metric, str) else list(dict.fromkeys(metric))
+    if not metrics:
+        raise QualityInputError("At least one metric is required")
+    unknown = [name for name in metrics if name not in METRICS]
+    if unknown:
+        raise QualityInputError(
+            f"Unknown metric '{unknown[0]}'. Choose one of: {', '.join(METRICS)}"
+        )
+    baseline_source = _load(baseline_dir, format, options)
+    candidate_source = _load(candidate_dir, format, options)
+    source = {
         "baseline": {"format": baseline_source.format, "ignored_files": baseline_source.ignored},
         "candidate": {"format": candidate_source.format, "ignored_files": candidate_source.ignored},
     }
     ignored = len(baseline_source.ignored) + len(candidate_source.ignored)
-    if ignored:
-        report["notes"].append(
-            f"{ignored} JSON file(s) or line(s) in the input directories were not read; "
-            "they are listed under input.ignored_files in --json output"
+    ignored_note = (
+        f"{ignored} JSON file(s) or line(s) in the input directories were not read; "
+        "they are listed under input.ignored_files in --json output"
+    )
+
+    comparisons = [
+        compare_repeated_runs(
+            _runs(baseline_source, name),
+            _runs(candidate_source, name),
+            metric=name,
+            thresholds=thresholds,
         )
-    return report
+        for name in metrics
+    ]
+    if len(comparisons) == 1:
+        report = comparisons[0]
+        report["input"] = source
+        if ignored:
+            report["notes"].append(ignored_note)
+        return report
+
+    notes: list[str] = []
+    for comparison in comparisons:
+        for note in comparison["notes"]:
+            if note.startswith("the candidate is "):
+                note = f"{comparison['metric']}: {note}"
+            if note not in notes:
+                notes.append(note)
+    if ignored:
+        notes.append(ignored_note)
+    notes.append(
+        f"{len(metrics)} metrics were checked; with no real change, the chance that at "
+        f"least one FAILs is up to {len(metrics)} times the per-metric rate"
+    )
+    reasons = [
+        f"{comparison['metric']}: {reason}"
+        for comparison in comparisons
+        if comparison["result"] != "PASS"
+        for reason in comparison["reasons"]
+    ]
+    result = combine_results([comparison["result"] for comparison in comparisons])
+    return {
+        "schema_version": QUALITY_SCHEMA_VERSION,
+        "result": result,
+        "metrics": metrics,
+        "comparisons": comparisons,
+        "thresholds": comparisons[0]["thresholds"],
+        "environment": comparisons[0]["environment"],
+        "input": source,
+        "reasons": reasons,
+        "notes": notes,
+        "explanation": "; ".join(reasons) if reasons else "every metric passed",
+    }
 
 
 def load_json_result(path: Path) -> dict[str, Any]:
