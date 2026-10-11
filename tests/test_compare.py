@@ -63,7 +63,7 @@ def test_warn_band_does_not_fail_overall():
 
     assert ttft_p95.percentage_delta == pytest.approx(6.6666667)
     assert ttft_p95.status == ComparisonStatus.WARN
-    assert result.overall_status == ComparisonStatus.PASS
+    assert result.overall_status == ComparisonStatus.WARN  # shown, but exits 0
 
 
 @pytest.mark.parametrize(
@@ -197,7 +197,7 @@ def test_compare_cli_same_version_unstable_exits_nonzero(tmp_path):
     )
 
     assert result.exit_code == 2
-    payload = json.loads(result.output)
+    payload = json.loads(result.stdout)
     assert payload["overall_status"] == "UNSTABLE"
 
 
@@ -275,7 +275,7 @@ def test_compare_cli_json_reports_failure_and_exit_one():
     )
 
     assert result.exit_code == 1
-    payload = json.loads(result.output)
+    payload = json.loads(result.stdout)
     assert payload["overall_status"] == "FAIL"
     assert payload["baseline"]["gpu"] == "NVIDIA L4"
     assert payload["candidate"]["vllm_version"] == "0.29.0"
@@ -317,7 +317,7 @@ def test_compare_cli_accepts_configurable_fail_thresholds():
     )
 
     assert result.exit_code == 0
-    assert "INFERENCE UPGRADE GUARD  PASS" in result.output
+    assert "INFERENCE UPGRADE GUARD  WARN" in result.output
 
 
 def test_compare_cli_rejects_incomparable_runs(tmp_path):
@@ -342,3 +342,46 @@ def test_compare_cli_rejects_incomparable_runs(tmp_path):
 
     assert result.exit_code == 3
     assert "incomparable" in result.output
+
+
+def test_zero_baseline_latency_is_a_failure_not_a_crash():
+    baseline_payload = _payload(BASELINE)
+    candidate_payload = copy.deepcopy(baseline_payload)
+    baseline_payload["metrics"]["ttft_ms"]["mean"] = 0.0
+    candidate_payload["metrics"]["ttft_ms"]["mean"] = 5.0
+    result = compare_benchmarks(
+        parse_normalized_benchmark(baseline_payload),
+        parse_normalized_benchmark(candidate_payload),
+        ComparisonThresholds(),
+    )
+    ttft_mean = next(metric for metric in result.metrics if metric.metric == "ttft_mean_ms")
+    assert ttft_mean.percentage_delta is None
+    assert ttft_mean.status == ComparisonStatus.FAIL
+    assert result.overall_status == ComparisonStatus.FAIL
+
+
+def test_no_metric_on_both_sides_is_inconclusive_not_pass(tmp_path):
+    payload = _payload(BASELINE)
+    payload["metrics"] = {"requests": {"successful": 100, "failed": 0}}
+    for name in ("b.json", "c.json"):
+        (tmp_path / name).write_text(json.dumps(payload), encoding="utf-8")
+    result = runner.invoke(
+        app,
+        [
+            "compare",
+            "--baseline",
+            str(tmp_path / "b.json"),
+            "--candidate",
+            str(tmp_path / "c.json"),
+        ],
+    )
+    assert result.exit_code == 2
+    assert "INFERENCE UPGRADE GUARD  INCONCLUSIVE" in result.output
+
+
+def test_compare_warns_that_it_is_deprecated():
+    result = runner.invoke(
+        app, ["compare", "--baseline", str(BASELINE), "--candidate", str(BASELINE)]
+    )
+    assert "compare: deprecated" in result.stderr
+    assert "use compare-runs" in result.stderr

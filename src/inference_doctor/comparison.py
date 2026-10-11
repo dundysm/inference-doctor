@@ -12,6 +12,7 @@ class ComparisonStatus(StrEnum):
     WARN = "WARN"
     FAIL = "FAIL"
     UNSTABLE = "UNSTABLE"
+    INCONCLUSIVE = "INCONCLUSIVE"  # overall only: no latency or throughput on both sides
 
 
 @dataclass(frozen=True)
@@ -137,15 +138,14 @@ def _compare_percent_metric(
         else:
             stable = abs(percentage_delta) <= stability_tolerance_percent
         status = ComparisonStatus.PASS if stable else ComparisonStatus.UNSTABLE
-    elif percentage_delta is None:
-        if candidate == baseline:
-            regression_percent = 0.0
-        elif lower_is_better:
-            regression_percent = float("inf")
-        else:
-            regression_percent = float("-inf")
     else:
-        regression_percent = percentage_delta if lower_is_better else -percentage_delta
+        if percentage_delta is not None:
+            regression_percent = percentage_delta if lower_is_better else -percentage_delta
+        elif candidate == baseline:
+            regression_percent = 0.0
+        else:
+            # A zero baseline has no percentage change; any rise is total.
+            regression_percent = float("inf") if lower_is_better else float("-inf")
 
         if regression_percent >= fail_percent:
             status = ComparisonStatus.FAIL
@@ -324,10 +324,22 @@ def compare_benchmarks(
         )
     )
 
+    performance = [
+        metric
+        for metric in metrics
+        if metric.unit in {"ms", "tokens/s", "requests/s"}
+        and metric.baseline is not None
+        and metric.candidate is not None
+    ]
     if any(metric.status == ComparisonStatus.UNSTABLE for metric in metrics):
         overall_status = ComparisonStatus.UNSTABLE
     elif any(metric.status == ComparisonStatus.FAIL for metric in metrics):
         overall_status = ComparisonStatus.FAIL
+    elif not performance:
+        # Nothing was measured on both sides, so there is nothing to pass.
+        overall_status = ComparisonStatus.INCONCLUSIVE
+    elif any(metric.status == ComparisonStatus.WARN for metric in metrics):
+        overall_status = ComparisonStatus.WARN
     else:
         overall_status = ComparisonStatus.PASS
 

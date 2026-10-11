@@ -4,10 +4,13 @@ Exit codes are the same for every command:
 
     0  PASS
     1  FAIL: a regression was measured
-    2  INCONCLUSIVE (compare-runs) or UNSTABLE (compare): no decision, the
-       measurement could not be trusted
+    2  INCONCLUSIVE, or UNSTABLE for compare: no decision, the measurement could
+       not be trusted
     3  error: no decision was made because of bad arguments, unreadable or
        invalid input, an unreachable Prometheus, or an internal error
+
+diagnose exits 1 when it reports a finding at or above --fail-on (critical by
+default), and 0 otherwise.
 
 Set INFERENCE_DOCTOR_DEBUG=1 to see the traceback of an internal error.
 """
@@ -119,23 +122,39 @@ def main(
     """Exit codes: 0 PASS, 1 FAIL, 2 INCONCLUSIVE or UNSTABLE, 3 error (no decision)."""
 
 
-@app.command(name="diagnose")
+FAIL_ON = {"critical": ("critical",), "warning": ("critical", "warning"), "never": ()}
+
+
+@app.command(
+    name="diagnose",
+    help="(Experimental) Read a live vLLM server's Prometheus metrics and report queue, "
+    "prefill, decode and KV-cache pressure. Read-only.",
+)
 def diagnose_command(
-    prometheus: str = typer.Option(..., "--prometheus"),
-    window: str = typer.Option("15m", "--window"),
+    prometheus: str = typer.Option(..., "--prometheus", help="Prometheus base URL."),
+    window: str = typer.Option("15m", "--window", help="Query window, such as 5m or 1h."),
     ttft_slo_ms: float | None = typer.Option(
-        None,
-        "--ttft-slo-ms",
+        None, "--ttft-slo-ms", help="Time-to-first-token p95 SLO in milliseconds."
     ),
     tpot_slo_ms: float | None = typer.Option(
-        None,
-        "--tpot-slo-ms",
+        None, "--tpot-slo-ms", help="Time-per-output-token p95 SLO in milliseconds."
+    ),
+    fail_on: str = typer.Option(
+        "critical",
+        "--fail-on",
+        help="Exit 1 when a finding of this severity or worse is reported: critical, "
+        "warning, or never.",
     ),
     json_output: bool = typer.Option(
         False,
         "--json",
     ),
 ) -> None:
+    if fail_on not in FAIL_ON:
+        typer.echo(
+            f"Error: --fail-on must be one of {', '.join(FAIL_ON)}, not '{fail_on}'", err=True
+        )
+        raise typer.Exit(EXIT_ERROR)
     try:
         snapshot = build_snapshot(
             prometheus_url=prometheus,
@@ -159,12 +178,18 @@ def diagnose_command(
                 indent=2,
             )
         )
-        return
+    else:
+        render_report(snapshot, findings)
 
-    render_report(snapshot, findings)
+    if any(finding.severity.value in FAIL_ON[fail_on] for finding in findings):
+        raise typer.Exit(EXIT_FAIL)
 
 
-@app.command(name="compare")
+@app.command(
+    name="compare",
+    help="(Deprecated) Compare one normalized result file with another. A single run per "
+    "side cannot measure noise; use compare-runs.",
+)
 def compare_command(
     baseline: Path = typer.Option(
         ...,
@@ -212,6 +237,12 @@ def compare_command(
     ),
     json_output: bool = typer.Option(False, "--json"),
 ) -> None:
+    typer.echo(
+        "inference-doctor compare: deprecated. One run per side cannot measure benchmark "
+        "noise; use compare-runs with repeated runs. compare will be removed in a future "
+        "release.",
+        err=True,
+    )
     try:
         thresholds = ComparisonThresholds(
             latency_warn_percent=latency_warn_percent,
@@ -242,7 +273,7 @@ def compare_command(
 
     if comparison.overall_status == ComparisonStatus.FAIL:
         raise typer.Exit(EXIT_FAIL)
-    if comparison.overall_status == ComparisonStatus.UNSTABLE:
+    if comparison.overall_status in (ComparisonStatus.UNSTABLE, ComparisonStatus.INCONCLUSIVE):
         raise typer.Exit(EXIT_NO_DECISION)
 
 

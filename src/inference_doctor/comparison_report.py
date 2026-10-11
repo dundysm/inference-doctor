@@ -38,6 +38,7 @@ def render_comparison(comparison: BenchmarkComparison) -> None:
         ComparisonStatus.WARN: "yellow",
         ComparisonStatus.FAIL: "red",
         ComparisonStatus.UNSTABLE: "magenta",
+        ComparisonStatus.INCONCLUSIVE: "yellow",
     }
 
     baseline = comparison.baseline_metadata

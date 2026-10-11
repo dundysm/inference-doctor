@@ -1,4 +1,9 @@
-# Experimental inference upgrade guard
+# Upgrade guard (deprecated)
+
+> **Deprecated.** `compare` judges one run against one run, so it cannot tell a real
+> change from benchmark noise. Use [`compare-runs`](measurement-quality.md) with repeated
+> runs. `compare` prints a deprecation notice on stderr and will be removed in a future
+> release.
 
 `inference-doctor compare` compares two previously produced, normalized benchmark result files. It does not launch vLLM, generate traffic, provision hardware, or alter the existing diagnostic rules.
 
@@ -8,7 +13,9 @@ inference-doctor compare \
   --candidate candidate.json
 ```
 
-Use `--json` for machine-readable output. Exit code `0` means the comparison passed, `1` means a regression failed the guard, `2` means a same-version control is unstable, and `3` means no decision was made because the inputs or thresholds were invalid, the runs were incomparable, or the tool hit an internal error. WARN rows do not fail the overall guard.
+Use `--json` for machine-readable output. Exit code `0` means the comparison passed (overall `PASS`, or `WARN` when some rows are in the warning band), `1` means a regression failed the guard, `2` means no decision (a same-version control is `UNSTABLE`, or the result is `INCONCLUSIVE` because no latency or throughput metric was present in both files), and `3` means no decision was made because the inputs or thresholds were invalid, the runs were incomparable, or the tool hit an internal error.
+
+A metric whose baseline is 0 has no percentage change; any rise in a latency from 0, or fall in a throughput to 0 from a positive value, counts as a failure.
 
 Same-version controls use a separate stability mode:
 
