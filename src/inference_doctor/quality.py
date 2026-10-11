@@ -75,25 +75,37 @@ def _metric_value(result: BenchmarkResult, metric: str) -> float | None:
     return getattr(stats, statistic.removesuffix("_ms"), None)
 
 
+RUN_FILE_PATTERNS = ("normalized.json", "*.normalized.json", "repetition-*.json")
+
+
+def _is_run_file(path: Path) -> bool:
+    name = path.name
+    if "aggregate" in name.lower() or name in {"summary.json", "run.json"}:
+        return False
+    return (
+        name == "normalized.json"
+        or name.endswith(".normalized.json")
+        or (name.startswith("repetition-") and name.endswith(".json"))
+    )
+
+
 def discover_run_paths(directory: Path) -> list[Path]:
     if not directory.is_dir():
         raise QualityInputError(f"Repeated-run input is not a directory: '{directory}'")
 
-    paths = {
-        path
-        for path in directory.rglob("*.json")
-        if path.name == "normalized.json"
-        or path.name.endswith(".normalized.json")
-        or path.name.startswith("repetition-")
-    }
-    paths = {
-        path
-        for path in paths
-        if "aggregate" not in path.name.lower() and path.name not in {"summary.json", "run.json"}
-    }
+    candidates = sorted(directory.rglob("*.json"))
+    paths = [path for path in candidates if _is_run_file(path)]
     if not paths:
-        raise QualityInputError(f"No normalized repeated-run JSON files found under '{directory}'")
-    return sorted(paths)
+        message = (
+            f"No repeated-run files found under '{directory}'. "
+            f"Files must be named {', '.join(RUN_FILE_PATTERNS)} (searched recursively)."
+        )
+        if candidates:
+            shown = ", ".join(path.name for path in candidates[:3])
+            more = f" and {len(candidates) - 3} more" if len(candidates) > 3 else ""
+            message += f" Ignored {len(candidates)} other JSON file(s): {shown}{more}."
+        raise QualityInputError(message)
+    return paths
 
 
 def load_repeated_runs(directory: Path, metric: str) -> list[RepeatedRun]:
@@ -140,6 +152,14 @@ def _outlier_paths(runs: list[RepeatedRun]) -> list[str]:
     return [str(runs[index].path) for index in sorted(flagged)]
 
 
+def _cv_percent(mean: float, standard_deviation: float | None) -> float | None:
+    if standard_deviation is None:
+        return None
+    if standard_deviation == 0:
+        return 0.0  # identical repetitions, including all zeros, are perfectly stable
+    return standard_deviation / mean * 100
+
+
 def summarize_runs(runs: list[RepeatedRun]) -> dict[str, Any]:
     values = [run.value for run in runs if run.value is not None]
     stats: dict[str, Any] = {
@@ -163,9 +183,7 @@ def summarize_runs(runs: list[RepeatedRun]) -> dict[str, Any]:
             "mean": mean,
             "median": statistics.median(values),
             "sample_standard_deviation": standard_deviation,
-            "cv_percent": (
-                standard_deviation / mean * 100 if standard_deviation is not None and mean else None
-            ),
+            "cv_percent": _cv_percent(mean, standard_deviation),
             "min": min(values),
             "max": max(values),
         }
@@ -219,17 +237,26 @@ def compare_repeated_runs(
     ]
     if failed_requests:
         reasons.append("one or more repetitions recorded failed or unavailable requests")
-    if baseline_stats["missing_values"] or candidate_stats["missing_values"]:
-        reasons.append(f"{METRICS[metric][0]} was unavailable in one or more repetitions")
-    if baseline_stats["count"] < 2 or candidate_stats["count"] < 2:
-        reasons.append("at least two repetitions per side are required for stability")
+    for label, stats in (("baseline", baseline_stats), ("candidate", candidate_stats)):
+        if stats["missing_values"]:
+            reasons.append(
+                f"{METRICS[metric][0]} was missing or non-finite in {stats['missing_values']} "
+                f"of {stats['count']} {label} repetition(s)"
+            )
+        elif stats["count"] < 2:
+            reasons.append(
+                f"{label} has {stats['count']} repetition; at least two are required to "
+                "measure stability"
+            )
 
     baseline_cv = baseline_stats["cv_percent"]
     candidate_cv = candidate_stats["cv_percent"]
-    if baseline_cv is None or baseline_cv > thresholds.stability_cv_percent:
-        reasons.append("baseline measurements exceeded the allowed stability threshold")
-    if candidate_cv is None or candidate_cv > thresholds.stability_cv_percent:
-        reasons.append("candidate measurements exceeded the allowed stability threshold")
+    for label, cv in (("baseline", baseline_cv), ("candidate", candidate_cv)):
+        if cv is not None and cv > thresholds.stability_cv_percent:
+            reasons.append(
+                f"{label} CV {cv:.2f}% exceeded the {thresholds.stability_cv_percent:g}% "
+                "stability threshold"
+            )
 
     baseline_mean = baseline_stats["mean"]
     candidate_mean = candidate_stats["mean"]

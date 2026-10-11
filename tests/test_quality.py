@@ -80,7 +80,7 @@ def test_unstable_baseline_is_inconclusive():
         metric="texts_per_second",
     )
     assert report["result"] == "INCONCLUSIVE"
-    assert "baseline measurements" in " ".join(report["reasons"])
+    assert "baseline CV 5.97% exceeded the 5% stability threshold" in " ".join(report["reasons"])
 
 
 def test_unstable_candidate_is_inconclusive():
@@ -90,7 +90,7 @@ def test_unstable_candidate_is_inconclusive():
         metric="texts_per_second",
     )
     assert report["result"] == "INCONCLUSIVE"
-    assert "candidate measurements" in " ".join(report["reasons"])
+    assert "candidate CV 5.97% exceeded the 5% stability threshold" in " ".join(report["reasons"])
 
 
 def test_apparent_outlier_remains_included_in_official_calculation():

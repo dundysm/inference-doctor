@@ -127,7 +127,13 @@ def parse_normalized_benchmark(payload: Any) -> BenchmarkResult:
     root = _require_mapping(payload, "root")
     schema_version = root.get("schema_version")
     if schema_version != "1":
-        raise BenchmarkResultError("'schema_version' must be '1' for normalized benchmark results")
+        if type(schema_version) is int and schema_version == 1:
+            raise BenchmarkResultError(
+                "'schema_version' must be the string \"1\", not the number 1"
+            )
+        raise BenchmarkResultError(
+            f"'schema_version' must be \"1\" for normalized benchmark results, got {schema_version!r}"
+        )
 
     environment_raw = _require_mapping(
         root.get("environment"),

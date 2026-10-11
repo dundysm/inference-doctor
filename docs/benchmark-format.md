@@ -2,7 +2,9 @@
 
 Inference Doctor does not force a benchmark harness on you. Your existing load test or benchmark only needs to emit one small normalized JSON file per repetition.
 
-`compare-runs` discovers files named `normalized.json`, `*.normalized.json`, or `repetition-*.json` recursively under the baseline and candidate directories.
+`compare-runs` discovers files named `normalized.json`, `*.normalized.json`, or `repetition-*.json` recursively under the baseline and candidate directories. Other JSON files are not read; files named `summary.json`, `run.json`, or containing `aggregate` are skipped. If no file matches, the error names the accepted patterns and the JSON files it ignored.
+
+`schema_version` is the string `"1"`. Metric values must be non-negative numbers or `null`; a non-finite value (`NaN`, `Infinity`) is treated as missing, and a metric missing from any repetition makes `compare-runs` return `INCONCLUSIVE`.
 
 ## Minimal example
 

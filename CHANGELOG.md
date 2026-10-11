@@ -6,6 +6,13 @@
 
 - `inference-doctor --version`, and `python -m inference_doctor`.
 
+### Fixed
+
+- When no repeated-run files are found, the error names the accepted file patterns and lists the JSON files that were ignored. Files such as `run1.json` used to be skipped without a word.
+- `compare-runs` explains `INCONCLUSIVE` accurately. A missing or non-finite metric, or a single repetition, used to be reported as "measurements exceeded the allowed stability threshold"; the stability reason now appears only when a CV was measured, and it states that CV.
+- Identical repetitions, including all-zero values, have a CV of 0 instead of no CV. `--metric requests_failed` could never pass before.
+- An integer `schema_version` (`1` instead of `"1"`) gets a message that says so.
+
 ### Changed
 
 - One exit-code scheme for every command: 0 PASS, 1 FAIL, 2 INCONCLUSIVE or UNSTABLE, 3 error with no decision. Before, `compare-runs` exited 2 (the INCONCLUSIVE code) for a missing directory or a mistyped option, `compare` exited 1 for UNSTABLE and 2 for invalid input, and `diagnose` exited 1 when Prometheus could not be queried.
