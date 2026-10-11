@@ -139,3 +139,27 @@ jobs:
         env:
           RESULT: ${{ steps.invalid.outputs.result }}
         run: test "$RESULT" = "ERROR"
+
+  action-isolated:
+    # The Action installs itself into its own virtual environment, so it works with the
+    # runner image's python3 and leaves the caller's packages alone.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Nothing from Inference Doctor is installed in the caller's Python
+        run: "! python3 -c 'import inference_doctor'"
+      - name: The quickstart passes without setup-python
+        id: quickstart
+        uses: ./
+        with:
+          baseline: examples/quickstart/baseline
+          candidate: examples/quickstart/candidate
+          metric: texts_per_second
+      - name: The Action reported PASS and left the caller's Python untouched
+        env:
+          RESULT: ${{ steps.quickstart.outputs.result }}
+        run: |
+          test "$RESULT" = "PASS"
+          ! python3 -c 'import inference_doctor'
