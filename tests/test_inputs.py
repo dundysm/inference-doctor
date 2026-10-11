@@ -7,12 +7,9 @@ from pathlib import Path
 
 import pytest
 
+from inference_doctor.adapters import load_directory
 from inference_doctor.benchmark_results import BenchmarkResultError, parse_normalized_benchmark
-from inference_doctor.quality import (
-    QualityInputError,
-    discover_run_paths,
-    load_and_compare_directories,
-)
+from inference_doctor.quality import load_and_compare_directories
 
 
 def _payload(**metrics) -> dict:
@@ -31,20 +28,30 @@ def _write_side(directory: Path, values, name="repetition-{:03d}.json") -> None:
         (directory / name.format(index)).write_text(json.dumps(payload), encoding="utf-8")
 
 
+def test_normalized_results_under_other_names_are_detected(tmp_path):
+    _write_side(tmp_path, [1000, 1001, 1002], name="run{}.json")
+    loaded = load_directory(tmp_path)
+    assert loaded.format == "normalized"
+    assert [item.path.name for item in loaded.records] == ["run1.json", "run2.json", "run3.json"]
+
+
 def test_discovery_error_names_the_patterns_and_the_ignored_files(tmp_path):
-    _write_side(tmp_path, [1000, 1001, 1002, 1003], name="run{}.json")
-    with pytest.raises(QualityInputError) as excinfo:
-        discover_run_paths(tmp_path)
+    for index in range(4):
+        (tmp_path / f"notes{index}.json").write_text('{"hello": 1}', encoding="utf-8")
+    with pytest.raises(BenchmarkResultError) as excinfo:
+        load_directory(tmp_path)
     message = str(excinfo.value)
     assert "repetition-*.json" in message and "*.normalized.json" in message
-    assert "Ignored 4 other JSON file(s): run1.json, run2.json, run3.json and 1 more" in message
+    assert (
+        "Ignored 4 other JSON file(s): notes0.json, notes1.json, notes2.json and 1 more" in message
+    )
 
 
 def test_discovery_skips_aggregates_and_summaries(tmp_path):
     _write_side(tmp_path, [1000, 1001])
     (tmp_path / "summary.json").write_text("{}", encoding="utf-8")
     (tmp_path / "aggregate.normalized.json").write_text("{}", encoding="utf-8")
-    assert [path.name for path in discover_run_paths(tmp_path)] == [
+    assert [item.path.name for item in load_directory(tmp_path).records] == [
         "repetition-001.json",
         "repetition-002.json",
     ]

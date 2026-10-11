@@ -1,8 +1,8 @@
 # Normalized benchmark format
 
-Inference Doctor does not force a benchmark harness on you. Your existing load test or benchmark only needs to emit one small normalized JSON file per repetition.
+If you run `vllm bench serve`, AIPerf, GuideLLM or SGLang, you do not need this format: `compare-runs` reads their result files directly, see [input formats](input-formats.md). Use the normalized format for any other harness. It is one small JSON file per repetition.
 
-`compare-runs` discovers files named `normalized.json`, `*.normalized.json`, or `repetition-*.json` recursively under the baseline and candidate directories. Other JSON files are not read; files named `summary.json`, `run.json`, or containing `aggregate` are skipped. If no file matches, the error names the accepted patterns and the JSON files it ignored.
+`compare-runs` reads files named `normalized.json`, `*.normalized.json`, or `repetition-*.json` recursively under the baseline and candidate directories. Normalized files under other names are detected too, as long as no file in the directory uses one of those names. Files named `summary.json`, `run.json`, or containing `aggregate` are skipped. If nothing is found, the error names the accepted patterns and the JSON files it ignored.
 
 `schema_version` is the string `"1"`. Metric values must be non-negative numbers or `null`; a non-finite value (`NaN`, `Infinity`) is treated as missing, and a metric missing from any repetition makes `compare-runs` return `INCONCLUSIVE`.
 
@@ -32,12 +32,14 @@ Inference Doctor does not force a benchmark harness on you. Your existing load t
     "ttft_ms": {
       "mean": 42.1,
       "median": 39.8,
-      "p95": 61.5
+      "p95": 61.5,
+      "p99": 74.0
     },
     "tpot_ms": {
       "mean": 8.2,
       "median": 8.0,
-      "p95": 9.1
+      "p95": 9.1,
+      "p99": 9.8
     }
   }
 }

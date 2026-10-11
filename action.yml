@@ -8,11 +8,27 @@ branding:
 
 inputs:
   baseline:
-    description: Directory containing repeated normalized baseline benchmark results
+    description: Directory of repeated baseline results (normalized, vLLM, AIPerf, GuideLLM or SGLang)
     required: true
   candidate:
-    description: Directory containing repeated normalized candidate benchmark results
+    description: Directory of repeated candidate results, in the same format
     required: true
+  format:
+    description: Result format (auto, normalized, vllm, aiperf, guidellm, sglang)
+    required: false
+    default: auto
+  gpu:
+    description: GPU name to record when the results do not include one
+    required: false
+    default: ""
+  model:
+    description: Model name to record when the results do not include one
+    required: false
+    default: ""
+  guidellm-benchmark:
+    description: Which benchmark of a GuideLLM sweep to compare, by index
+    required: false
+    default: ""
   metric:
     description: Metric to compare
     required: false
@@ -80,6 +96,10 @@ runs:
         INPUT_CONFIDENCE: ${{ inputs.confidence }}
         INPUT_MIN_REPETITIONS: ${{ inputs['min-repetitions'] }}
         INPUT_STABILITY_CV_PERCENT: ${{ inputs['stability-cv-percent'] }}
+        INPUT_FORMAT: ${{ inputs.format }}
+        INPUT_GPU: ${{ inputs.gpu }}
+        INPUT_MODEL: ${{ inputs.model }}
+        INPUT_GUIDELLM_BENCHMARK: ${{ inputs['guidellm-benchmark'] }}
         TYPER_USE_RICH: "0"  # plain error text in the step summary
       run: |
         args=(
@@ -90,10 +110,16 @@ runs:
           --regression-percent "$INPUT_REGRESSION_PERCENT"
           --confidence "$INPUT_CONFIDENCE"
           --min-repetitions "$INPUT_MIN_REPETITIONS"
+          --format "$INPUT_FORMAT"
           --json
         )
         if [ -n "$INPUT_STABILITY_CV_PERCENT" ]; then
           args+=(--stability-cv-percent "$INPUT_STABILITY_CV_PERCENT")
+        fi
+        if [ -n "$INPUT_GPU" ]; then args+=(--gpu "$INPUT_GPU"); fi
+        if [ -n "$INPUT_MODEL" ]; then args+=(--model "$INPUT_MODEL"); fi
+        if [ -n "$INPUT_GUIDELLM_BENCHMARK" ]; then
+          args+=(--guidellm-benchmark "$INPUT_GUIDELLM_BENCHMARK")
         fi
         set +e
         inference-doctor "${args[@]}" \

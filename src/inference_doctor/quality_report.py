@@ -12,14 +12,18 @@ def _signed(value: float | None) -> str:
     return "unavailable" if value is None else f"{value:+.2f}%"
 
 
-def render_quality_report(report: dict) -> None:
-    console = Console()
+def render_quality_report(report: dict, console: Console | None = None) -> None:
+    console = console or Console()
     status = report["result"]
     style = {"PASS": "green", "FAIL": "red", "INCONCLUSIVE": "yellow"}[status]
     console.print("[bold]INFERENCE CI[/bold]")
     console.print(f"RESULT: [{style}]{status}[/]")
     direction = "lower is better" if report["lower_is_better"] else "higher is better"
     console.print(f"Metric: {report['metric_label']} ({report['metric']}, {direction})")
+    source = report.get("input")
+    if source:
+        formats = {source["baseline"]["format"], source["candidate"]["format"]}
+        console.print(f"Input: {' / '.join(sorted(formats))} results")
 
     table = Table(show_lines=False)
     table.add_column("", style="bold")

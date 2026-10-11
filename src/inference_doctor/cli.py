@@ -25,6 +25,7 @@ import typer
 from typer.core import TyperGroup
 
 from inference_doctor import __version__
+from inference_doctor.adapters import FORMATS, SourceOptions
 from inference_doctor.benchmark_results import (
     BenchmarkResultError,
     ensure_comparable,
@@ -253,7 +254,7 @@ def compare_runs_command(
         exists=True,
         file_okay=False,
         readable=True,
-        help="Directory containing repeated normalized baseline runs.",
+        help="Directory of repeated baseline results, one file or JSONL line per run.",
     ),
     candidate: Path = typer.Option(
         ...,
@@ -261,7 +262,7 @@ def compare_runs_command(
         exists=True,
         file_okay=False,
         readable=True,
-        help="Directory containing repeated normalized candidate runs.",
+        help="Directory of repeated candidate results, one file or JSONL line per run.",
     ),
     metric: str = typer.Option(
         "output_token_throughput",
@@ -291,6 +292,22 @@ def compare_runs_command(
         help="Optional ceiling on each side's CV. Off by default: the confidence interval "
         "already widens with noise.",
     ),
+    input_format: str = typer.Option(
+        "auto",
+        "--format",
+        help="Result format: " + ", ".join(FORMATS) + ". auto detects it per file.",
+    ),
+    gpu: str | None = typer.Option(
+        None, "--gpu", help="GPU name to record when the results do not include one."
+    ),
+    model: str | None = typer.Option(
+        None, "--model", help="Model name to record when the results do not include one."
+    ),
+    guidellm_benchmark: int | None = typer.Option(
+        None,
+        "--guidellm-benchmark",
+        help="Which benchmark of a GuideLLM sweep to compare, by index.",
+    ),
     json_output: bool = typer.Option(False, "--json"),
 ) -> None:
     try:
@@ -298,6 +315,8 @@ def compare_runs_command(
             baseline,
             candidate,
             metric=metric,
+            format=input_format,
+            options=SourceOptions(gpu=gpu, model=model, guidellm_benchmark=guidellm_benchmark),
             thresholds=QualityThresholds(
                 regression_percent=regression_percent,
                 confidence=confidence,

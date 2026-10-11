@@ -7,12 +7,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from inference_doctor.adapters import UNSPECIFIED, LoadedDirectory, SourceOptions, load_directory
 from inference_doctor.benchmark_results import (
     BenchmarkResult,
     BenchmarkResultError,
     IncomparableBenchmarkError,
     ensure_comparable,
-    load_normalized_benchmark,
 )
 from inference_doctor.stats import welch_log_ratio_interval
 
@@ -136,18 +136,32 @@ class RepeatedRun:
     path: Path
     result: BenchmarkResult
     value: float | None
+    record: int | None = None  # line number within a JSONL file
+
+    @property
+    def label(self) -> str:
+        return str(self.path) if self.record is None else f"{self.path}:{self.record}"
 
 
+LATENCY_FAMILIES = {
+    "ttft": "TTFT",
+    "tpot": "TPOT",
+    "itl": "ITL",
+    "e2el": "End-to-end latency",
+}
+LATENCY_STATISTICS = {"mean": "mean", "median": "median", "p95": "p95", "p99": "p99"}
+
+# metric name -> (label, lower is better)
 METRICS: dict[str, tuple[str, bool]] = {
     "output_token_throughput": ("Output token throughput", False),
+    "total_token_throughput": ("Total token throughput", False),
     "request_throughput": ("Request throughput", False),
     "texts_per_second": ("Texts per second", False),
-    "ttft_mean_ms": ("TTFT mean", True),
-    "ttft_median_ms": ("TTFT median", True),
-    "ttft_p95_ms": ("TTFT p95", True),
-    "tpot_mean_ms": ("TPOT mean", True),
-    "tpot_median_ms": ("TPOT median", True),
-    "tpot_p95_ms": ("TPOT p95", True),
+    **{
+        f"{family}_{statistic}_ms": (f"{label} {statistic_label}", True)
+        for family, label in LATENCY_FAMILIES.items()
+        for statistic, statistic_label in LATENCY_STATISTICS.items()
+    },
     "requests_successful": ("Successful requests", False),
     "requests_failed": ("Failed requests", True),
 }
@@ -158,63 +172,35 @@ def metric_choices() -> tuple[str, ...]:
 
 
 def _metric_value(result: BenchmarkResult, metric: str) -> float | None:
-    if metric == "output_token_throughput":
-        return result.metrics.output_token_throughput
-    if metric == "request_throughput":
-        return result.metrics.request_throughput
-    if metric == "texts_per_second":
-        return result.metrics.texts_per_second
+    metrics = result.metrics
     if metric == "requests_successful":
-        return result.metrics.requests.successful
+        return metrics.requests.successful
     if metric == "requests_failed":
-        return result.metrics.requests.failed
-
-    prefix, statistic = metric.split("_", 1)
-    stats = result.metrics.ttft_ms if prefix == "ttft" else result.metrics.tpot_ms
-    return getattr(stats, statistic.removesuffix("_ms"), None)
-
-
-RUN_FILE_PATTERNS = ("normalized.json", "*.normalized.json", "repetition-*.json")
+        return metrics.requests.failed
+    if metric.endswith("_ms"):
+        family, statistic = metric.removesuffix("_ms").rsplit("_", 1)
+        return getattr(getattr(metrics, f"{family}_ms"), statistic)
+    return getattr(metrics, metric)
 
 
-def _is_run_file(path: Path) -> bool:
-    name = path.name
-    if "aggregate" in name.lower() or name in {"summary.json", "run.json"}:
-        return False
-    return (
-        name == "normalized.json"
-        or name.endswith(".normalized.json")
-        or (name.startswith("repetition-") and name.endswith(".json"))
-    )
-
-
-def discover_run_paths(directory: Path) -> list[Path]:
-    if not directory.is_dir():
-        raise QualityInputError(f"Repeated-run input is not a directory: '{directory}'")
-
-    candidates = sorted(directory.rglob("*.json"))
-    paths = [path for path in candidates if _is_run_file(path)]
-    if not paths:
-        message = (
-            f"No repeated-run files found under '{directory}'. "
-            f"Files must be named {', '.join(RUN_FILE_PATTERNS)} (searched recursively)."
-        )
-        if candidates:
-            shown = ", ".join(path.name for path in candidates[:3])
-            more = f" and {len(candidates) - 3} more" if len(candidates) > 3 else ""
-            message += f" Ignored {len(candidates)} other JSON file(s): {shown}{more}."
-        raise QualityInputError(message)
-    return paths
-
-
-def load_repeated_runs(directory: Path, metric: str) -> list[RepeatedRun]:
+def load_repeated_runs(
+    directory: Path,
+    metric: str,
+    *,
+    format: str = "auto",
+    options: SourceOptions | None = None,
+) -> tuple[list[RepeatedRun], LoadedDirectory]:
     if metric not in METRICS:
         raise QualityInputError(f"Unknown metric '{metric}'. Choose one of: {', '.join(METRICS)}")
-    runs: list[RepeatedRun] = []
-    for path in discover_run_paths(directory):
-        result = load_normalized_benchmark(path)
-        runs.append(RepeatedRun(path, result, _metric_value(result, metric)))
-    return runs
+    try:
+        loaded = load_directory(directory, format, options)
+    except BenchmarkResultError as exc:
+        raise QualityInputError(str(exc)) from exc
+    runs = [
+        RepeatedRun(item.path, item.result, _metric_value(item.result, metric), item.record)
+        for item in loaded.records
+    ]
+    return runs, loaded
 
 
 def _percentile(values: list[float], quantile: float) -> float:
@@ -248,7 +234,7 @@ def _outlier_paths(runs: list[RepeatedRun]) -> list[str]:
         flagged.update(
             index for index, value in enumerate(numbers) if abs(value - median) > 3 * mad
         )
-    return [str(runs[index].path) for index in sorted(flagged)]
+    return [runs[index].label for index in sorted(flagged)]
 
 
 def _cv_percent(mean: float, standard_deviation: float | None) -> float | None:
@@ -332,14 +318,36 @@ def compare_repeated_runs(
     # Validity checks. Any failure means there is no verdict, whatever the numbers say.
     environment_reasons = _validate_environment(baseline, candidate)
     reasons = list(environment_reasons)
+    notes: list[str] = []
     failed_requests = [
-        (side, run.path)
+        (side, run.label)
         for side, runs in (("baseline", baseline), ("candidate", candidate))
         for run in runs
-        if run.result.metrics.requests.failed is None or run.result.metrics.requests.failed > 0
+        if run.result.failed_requests_reported
+        and (run.result.metrics.requests.failed is None or run.result.metrics.requests.failed > 0)
     ]
     if failed_requests:
         reasons.append("one or more repetitions recorded failed or unavailable requests")
+    unreported = sorted(
+        {
+            run.result.source_format
+            for run in (*baseline, *candidate)
+            if not run.result.failed_requests_reported
+        }
+    )
+    if unreported:
+        notes.append(
+            f"{', '.join(unreported)} results do not record failed requests, so failures "
+            "could not be checked"
+        )
+    for name in ("gpu", "model"):
+        if any(
+            getattr(run.result.environment, name) == UNSPECIFIED for run in (*baseline, *candidate)
+        ):
+            notes.append(
+                f"the {name} is not recorded in the results, so it could not be compared; "
+                f"pass --{name} to record it"
+            )
     enough_repetitions = True
     for side, stats in (("baseline", baseline_stats), ("candidate", candidate_stats)):
         if stats["missing_values"]:
@@ -385,7 +393,6 @@ def compare_repeated_runs(
         if status != "PASS":
             reasons.append(decision.reason)
 
-    notes: list[str] = []
     if decision is not None and decision.regression_percent <= -thresholds.regression_percent:
         notes.append(
             f"the candidate is {-decision.regression_percent:.2f}% better than the baseline, "
@@ -435,8 +442,8 @@ def compare_repeated_runs(
         "explanation": explanation,
         "reasons": reasons,
         "notes": notes,
-        "baseline_files": [str(run.path) for run in baseline],
-        "candidate_files": [str(run.path) for run in candidate],
+        "baseline_files": [run.label for run in baseline],
+        "candidate_files": [run.label for run in candidate],
     }
 
 
@@ -466,13 +473,27 @@ def load_and_compare_directories(
     *,
     metric: str = "output_token_throughput",
     thresholds: QualityThresholds = QualityThresholds(),
+    format: str = "auto",
+    options: SourceOptions | None = None,
 ) -> dict[str, Any]:
-    return compare_repeated_runs(
-        load_repeated_runs(baseline_dir, metric),
-        load_repeated_runs(candidate_dir, metric),
-        metric=metric,
-        thresholds=thresholds,
+    baseline, baseline_source = load_repeated_runs(
+        baseline_dir, metric, format=format, options=options
     )
+    candidate, candidate_source = load_repeated_runs(
+        candidate_dir, metric, format=format, options=options
+    )
+    report = compare_repeated_runs(baseline, candidate, metric=metric, thresholds=thresholds)
+    report["input"] = {
+        "baseline": {"format": baseline_source.format, "ignored_files": baseline_source.ignored},
+        "candidate": {"format": candidate_source.format, "ignored_files": candidate_source.ignored},
+    }
+    ignored = len(baseline_source.ignored) + len(candidate_source.ignored)
+    if ignored:
+        report["notes"].append(
+            f"{ignored} JSON file(s) or line(s) in the input directories were not read; "
+            "they are listed under input.ignored_files in --json output"
+        )
+    return report
 
 
 def load_json_result(path: Path) -> dict[str, Any]:

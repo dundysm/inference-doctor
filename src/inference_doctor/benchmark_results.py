@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -25,9 +25,10 @@ class BenchmarkEnvironment:
 
 @dataclass(frozen=True)
 class LatencyStats:
-    mean: float | None
-    median: float | None
-    p95: float | None
+    mean: float | None = None
+    median: float | None = None
+    p95: float | None = None
+    p99: float | None = None
 
 
 @dataclass(frozen=True)
@@ -44,6 +45,9 @@ class BenchmarkMetrics:
     request_throughput: float | None
     requests: RequestCounts
     texts_per_second: float | None = None
+    itl_ms: LatencyStats = field(default_factory=LatencyStats)
+    e2el_ms: LatencyStats = field(default_factory=LatencyStats)
+    total_token_throughput: float | None = None
 
 
 @dataclass(frozen=True)
@@ -52,6 +56,10 @@ class BenchmarkResult:
     environment: BenchmarkEnvironment
     benchmark_parameters: dict[str, Any]
     metrics: BenchmarkMetrics
+    source_format: str = "normalized"
+    # False when the source tool does not record failed requests at all (SGLang
+    # without --output-details), as opposed to recording a missing value.
+    failed_requests_reported: bool = True
 
     def metadata_dict(self) -> dict[str, Any]:
         return {
@@ -60,6 +68,7 @@ class BenchmarkResult:
             "model": self.environment.model,
             "image": self.environment.image,
             "benchmark_parameters": self.benchmark_parameters,
+            "source_format": self.source_format,
         }
 
 
@@ -120,6 +129,7 @@ def _latency_stats(
             f"metrics.{field}.median",
         ),
         p95=_metric_number(values, "p95", f"metrics.{field}.p95"),
+        p99=_metric_number(values, "p99", f"metrics.{field}.p99"),
     )
 
 
@@ -193,6 +203,13 @@ def parse_normalized_benchmark(payload: Any) -> BenchmarkResult:
                 metrics,
                 "texts_per_second",
                 "metrics.texts_per_second",
+            ),
+            itl_ms=_latency_stats(metrics, "itl_ms"),
+            e2el_ms=_latency_stats(metrics, "e2el_ms"),
+            total_token_throughput=_metric_number(
+                metrics,
+                "total_token_throughput",
+                "metrics.total_token_throughput",
             ),
         ),
     )

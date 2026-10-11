@@ -99,6 +99,18 @@ jobs:
           OUTCOME: ${{ steps.regressed.outcome }}
         run: test "$RESULT" = "FAIL" && test "$OUTCOME" = "failure"
 
+      - name: vLLM bench serve results are read directly
+        id: vllm
+        uses: ./
+        with:
+          baseline: examples/vllm-bench-serve/baseline
+          candidate: examples/vllm-bench-serve/candidate
+
+      - name: The Action reports PASS for vLLM throughput
+        env:
+          RESULT: ${{ steps.vllm.outputs.result }}
+        run: test "$RESULT" = "PASS"
+
       - name: A missing directory is reported as ERROR
         id: invalid
         continue-on-error: true

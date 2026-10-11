@@ -14,6 +14,15 @@
 - The quickstart has five repetitions per side and a `regressed-candidate` directory that demonstrates `FAIL`.
 - The Action passes its inputs to the shell through environment variables instead of interpolating them into the script.
 
+### Added: read benchmark tools' own output
+
+- `compare-runs` reads the result files of `vllm bench serve --save-result` (including `--append-result` JSON Lines), NVIDIA AIPerf and GenAI-Perf, GuideLLM `benchmarks.json`, and SGLang `bench_serving`, with no conversion step. `--format auto` (the default) detects the format per file; `--format` forces one. See `docs/input-formats.md`.
+- `--gpu` and `--model` record values the result files do not carry; `--guidellm-benchmark` picks one load point of a GuideLLM sweep. Matching Action inputs `format`, `gpu`, `model` and `guidellm-benchmark`.
+- p99 latencies, inter-token latency (`itl_*_ms`), end-to-end latency (`e2el_*_ms`) and total token throughput, in the normalized schema and as `--metric` choices. Every latency family has mean, median, p95 and p99.
+- The report shows the input format, notes when the GPU or model was not recorded or a tool does not record failed requests, and lists skipped files under `input.ignored_files`.
+- `examples/vllm-bench-serve` holds results in vLLM's own format, where throughput passes and mean TTFT fails.
+- Normalized results under any file name are detected, as long as no file in the directory uses one of the standard names.
+
 ### Added
 
 - `inference-doctor --version`, and `python -m inference_doctor`.
