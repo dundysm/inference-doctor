@@ -12,7 +12,10 @@
   },
   "metrics": {
     "texts_per_second": 1000.0,
-    "requests": {"successful": 100, "failed": 0},
+    "requests": {
+      "successful": 100,
+      "failed": 0
+    },
     "ttft_ms": {},
     "tpot_ms": {}
   }

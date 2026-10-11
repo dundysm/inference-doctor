@@ -1,5 +1,5 @@
 name: Inference Doctor
-description: Trustworthy performance regression gate for LLM inference benchmarks
+description: Performance regression gate for LLM inference benchmarks that checks measurement quality first
 author: dundysm
 
 branding:
@@ -17,14 +17,22 @@ inputs:
     description: Metric to compare
     required: false
     default: output_token_throughput
-  stability-cv-percent:
-    description: Maximum allowed coefficient of variation for each side
-    required: false
-    default: "5"
   regression-percent:
-    description: Regression threshold that causes FAIL after measurements are stable
+    description: FAIL when the whole confidence interval for the regression is at or past this percentage
     required: false
     default: "10"
+  confidence:
+    description: Two-sided confidence level of the interval
+    required: false
+    default: "0.90"
+  min-repetitions:
+    description: Repetitions required on each side (5 or more recommended)
+    required: false
+    default: "3"
+  stability-cv-percent:
+    description: Optional ceiling on each side's coefficient of variation; empty means no ceiling
+    required: false
+    default: ""
 
 outputs:
   result:
@@ -39,6 +47,12 @@ outputs:
   delta-percent:
     description: Candidate percentage delta versus baseline
     value: ${{ steps.report.outputs.delta_percent }}
+  regression-percent-low:
+    description: Lower bound of the confidence interval for the regression (positive is worse)
+    value: ${{ steps.report.outputs.regression_percent_low }}
+  regression-percent-high:
+    description: Upper bound of the confidence interval for the regression (positive is worse)
+    value: ${{ steps.report.outputs.regression_percent_high }}
   baseline-cv:
     description: Baseline coefficient of variation percentage
     value: ${{ steps.report.outputs.baseline_cv }}
@@ -51,20 +65,38 @@ runs:
   steps:
     - name: Install Inference Doctor
       shell: bash
-      run: python -m pip install "${{ github.action_path }}"
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+      run: python -m pip install "$ACTION_PATH"
 
     - name: Compare repeated benchmark runs
       id: compare
       shell: bash
+      env:
+        INPUT_BASELINE: ${{ inputs.baseline }}
+        INPUT_CANDIDATE: ${{ inputs.candidate }}
+        INPUT_METRIC: ${{ inputs.metric }}
+        INPUT_REGRESSION_PERCENT: ${{ inputs['regression-percent'] }}
+        INPUT_CONFIDENCE: ${{ inputs.confidence }}
+        INPUT_MIN_REPETITIONS: ${{ inputs['min-repetitions'] }}
+        INPUT_STABILITY_CV_PERCENT: ${{ inputs['stability-cv-percent'] }}
+        TYPER_USE_RICH: "0"  # plain error text in the step summary
       run: |
+        args=(
+          compare-runs
+          --baseline "$INPUT_BASELINE"
+          --candidate "$INPUT_CANDIDATE"
+          --metric "$INPUT_METRIC"
+          --regression-percent "$INPUT_REGRESSION_PERCENT"
+          --confidence "$INPUT_CONFIDENCE"
+          --min-repetitions "$INPUT_MIN_REPETITIONS"
+          --json
+        )
+        if [ -n "$INPUT_STABILITY_CV_PERCENT" ]; then
+          args+=(--stability-cv-percent "$INPUT_STABILITY_CV_PERCENT")
+        fi
         set +e
-        inference-doctor compare-runs \
-          --baseline "${{ inputs.baseline }}" \
-          --candidate "${{ inputs.candidate }}" \
-          --metric "${{ inputs.metric }}" \
-          --stability-cv-percent "${{ inputs['stability-cv-percent'] }}" \
-          --regression-percent "${{ inputs['regression-percent'] }}" \
-          --json \
+        inference-doctor "${args[@]}" \
           > "$RUNNER_TEMP/inference-doctor-report.json" \
           2> "$RUNNER_TEMP/inference-doctor-error.txt"
         status=$?
@@ -83,6 +115,15 @@ runs:
         temp = Path(os.environ["RUNNER_TEMP"])
         report_path = temp / "inference-doctor-report.json"
         error_path = temp / "inference-doctor-error.txt"
+        keys = (
+            "baseline_mean",
+            "candidate_mean",
+            "delta_percent",
+            "regression_percent_low",
+            "regression_percent_high",
+            "baseline_cv",
+            "candidate_cv",
+        )
 
         def set_output(key, value):
             with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
@@ -94,17 +135,27 @@ runs:
                 handle.write("## Inference Doctor\n\n**Result:** `ERROR`\n\n")
                 handle.write(f"```text\n{error}\n```\n")
             set_output("result", "ERROR")
-            for key in ("baseline_mean", "candidate_mean", "delta_percent", "baseline_cv", "candidate_cv"):
+            for key in keys:
                 set_output(key, None)
             raise SystemExit(0)
 
         report = json.loads(report_path.read_text(encoding="utf-8"))
         baseline = report["baseline"]
         candidate = report["candidate"]
+        interval = report["confidence_interval"]
+        thresholds = report["thresholds"]
 
         def fmt(value, suffix=""):
             return "unavailable" if value is None else f"{value:.2f}{suffix}"
 
+        def signed(value):
+            return "unavailable" if value is None else f"{value:+.2f}%"
+
+        interval_text = (
+            f"{signed(interval['regression_percent_low'])} to {signed(interval['regression_percent_high'])}"
+            if interval["available"]
+            else "unavailable"
+        )
         lines = [
             "## Inference Doctor",
             "",
@@ -113,16 +164,21 @@ runs:
             "",
             "| | Baseline | Candidate |",
             "| --- | ---: | ---: |",
+            f"| Repetitions | {baseline['count']} | {candidate['count']} |",
             f"| Mean | {fmt(baseline['mean'])} | {fmt(candidate['mean'])} |",
             f"| CV | {fmt(baseline['cv_percent'], '%')} | {fmt(candidate['cv_percent'], '%')} |",
-            f"| Delta |  | {fmt(report['delta_percent'], '%')} |",
             "",
-            f"Stability threshold: `{report['thresholds']['stability_cv_percent']}%`  ",
-            f"Regression threshold: `{report['thresholds']['regression_percent']}%`",
+            f"Delta: `{signed(report['delta_percent'])}`  ",
+            f"{thresholds['confidence']:.0%} confidence interval for the regression (positive is worse): `{interval_text}`  ",
+            f"Regression threshold: `{thresholds['regression_percent']:g}%`",
         ]
 
         if report["reasons"]:
             lines += ["", "**Why:**"] + [f"- {reason}" for reason in report["reasons"]]
+        elif report["explanation"]:
+            lines += ["", f"**Why:** {report['explanation']}."]
+        for note in report.get("notes", []):
+            lines += ["", f"**Note:** {note}."]
 
         if report["result"] == "INCONCLUSIVE":
             lines += ["", "No merge recommendation was made because the measurement was not trustworthy enough."]
@@ -134,10 +190,14 @@ runs:
         set_output("baseline_mean", baseline["mean"])
         set_output("candidate_mean", candidate["mean"])
         set_output("delta_percent", report["delta_percent"])
+        set_output("regression_percent_low", interval.get("regression_percent_low"))
+        set_output("regression_percent_high", interval.get("regression_percent_high"))
         set_output("baseline_cv", baseline["cv_percent"])
         set_output("candidate_cv", candidate["cv_percent"])
         PY
 
     - name: Enforce gate
       shell: bash
-      run: exit "${{ steps.compare.outputs.exit_code }}"
+      env:
+        EXIT_CODE: ${{ steps.compare.outputs.exit_code }}
+      run: exit "$EXIT_CODE"

@@ -13,15 +13,15 @@ It does not provision GPUs or decide how to benchmark your model. Your workflow 
     baseline: artifacts/baseline
     candidate: artifacts/candidate
     metric: output_token_throughput
-    stability-cv-percent: "5"
     regression-percent: "10"
+    min-repetitions: "5"
 ```
 
 The Action returns:
 
-- `PASS` when both sides are stable and the regression threshold is not crossed
-- `FAIL` when both sides are stable and the candidate crosses the regression threshold
-- `INCONCLUSIVE` when the comparison is not trustworthy enough to make a merge decision
+- `PASS` when the whole confidence interval for the regression is below the threshold
+- `FAIL` when the whole interval is at or past the threshold
+- `INCONCLUSIVE` when the interval contains the threshold, or the comparison is not valid (too few repetitions, failed requests, missing metrics, incomparable environments)
 - `ERROR` for invalid input or execution errors
 
 `FAIL`, `INCONCLUSIVE`, and `ERROR` fail the GitHub Action step. This is intentional: an untrustworthy or invalid benchmark should not silently approve a change.
@@ -60,6 +60,7 @@ The Action exposes:
 - `baseline-mean`
 - `candidate-mean`
 - `delta-percent`
+- `regression-percent-low` and `regression-percent-high`: the confidence interval for the regression, positive is worse
 - `baseline-cv`
 - `candidate-cv`
 
@@ -67,7 +68,9 @@ It also writes a Markdown summary to the GitHub Actions job summary. Invalid inp
 
 ## Input contract
 
-Each baseline/candidate directory contains repeated normalized JSON benchmark results. At least two repetitions per side are required for a stability decision.
+Each baseline/candidate directory contains repeated normalized JSON benchmark results. At least `min-repetitions` (default 3) are required on each side; 5 or more is recommended, see [gate calibration](gate-calibration.md).
+
+Other inputs: `confidence` (default `0.90`) and `stability-cv-percent` (an optional CV ceiling, empty by default).
 
 See [benchmark-format.md](benchmark-format.md) for the exact JSON contract and `examples/quickstart/` for the smallest copyable example.
 
@@ -75,4 +78,4 @@ Environment and workload parameters must be comparable across runs. See [measure
 
 ## Why INCONCLUSIVE exists
 
-A simple threshold can produce false confidence when benchmark variance is high. Inference Doctor refuses to make a merge recommendation when the baseline or candidate exceeds the configured stability threshold, requests fail, required metrics are unavailable, or benchmark environments are not comparable.
+A simple threshold can produce false confidence when benchmark variance is high. Inference Doctor refuses to make a merge recommendation when the confidence interval cannot separate the candidate from the threshold, requests fail, required metrics are unavailable, there are too few repetitions, or benchmark environments are not comparable.

@@ -50,33 +50,23 @@ Want to use your own benchmark output? Start with the [normalized benchmark form
 
 A PR can pass every functional test and still make inference slower. A naive performance gate compares two numbers, but GPU benchmarks can be noisy enough to create false regressions or false confidence.
 
-Inference Doctor checks repeatability first, then evaluates the regression. By default:
+Inference Doctor checks that the comparison is valid, then puts a confidence interval around the change instead of comparing two means:
 
-- baseline CV must be at or below 5%
-- candidate CV must be at or below 5%
-- failed requests or incomparable benchmark environments make the result `INCONCLUSIVE`
-- a stable 10% directional regression is `FAIL`
-- apparent outliers are reported but remain in the official calculation
+- incomparable environments, failed requests, missing metrics or fewer than 3 repetitions per side make the result `INCONCLUSIVE`
+- `FAIL` when the whole 90% confidence interval for the regression is at or past the threshold (default 10%)
+- `PASS` when the whole interval is below the threshold
+- `INCONCLUSIVE` when the interval contains the threshold: the data cannot tell, and more repetitions would
+- apparent outliers are flagged but stay in the calculation, so a bad repetition widens the interval instead of being hidden
 
-```text
-PASS
-throughput: -2.1%
-measurement quality: stable
-```
+From the checked-in examples:
 
 ```text
-FAIL
-throughput: -13.4%
-measurement quality: stable
-regression threshold: 10%
+PASS          quickstart: -2.0%, 90% interval for the regression +1.08% to +2.92%
+FAIL          quickstart, regressed candidate: -14.0%, interval +13.13% to +14.87%
+INCONCLUSIVE  real H100 run: -4.19%, interval -3.33% to +11.17% (one noisy baseline block)
 ```
 
-```text
-INCONCLUSIVE
-throughput: -7.3%
-baseline CV: 8.9%
-reason: baseline measurements are too noisy to trust
-```
+At the threshold itself each wrong verdict happens about 5% of the time; further from it, well under 1%. [Gate calibration](docs/gate-calibration.md) has the measured rates for 3, 5 and 10 repetitions. Use 5 or more per side.
 
 ## GitHub Actions
 
@@ -89,11 +79,11 @@ After your benchmark job produces repeated normalized results, use Inference Doc
     baseline: artifacts/baseline
     candidate: artifacts/candidate
     metric: output_token_throughput
-    stability-cv-percent: "5"
     regression-percent: "10"
+    min-repetitions: "5"
 ```
 
-The Action writes a readable GitHub step summary and exposes the result, baseline/candidate means, delta, and CVs as outputs. `FAIL` and `INCONCLUSIVE` both fail the Action step so noisy evidence cannot silently approve a change.
+The Action writes a readable GitHub step summary and exposes the result, baseline/candidate means, delta, the confidence interval and CVs as outputs. `FAIL` and `INCONCLUSIVE` both fail the Action step so noisy evidence cannot silently approve a change.
 
 Inference Doctor intentionally **does not provision GPUs**. Run your preferred benchmark on your existing GPU/self-hosted runner, save normalized results, then let Inference Doctor make the measurement-quality + regression decision.
 
@@ -114,16 +104,18 @@ Supported metrics include output-token throughput, request throughput, texts/sec
 
 | Result | Meaning | Exit code |
 | --- | --- | ---: |
-| `PASS` | Stable measurements; threshold not crossed | 0 |
-| `FAIL` | Stable measurements; regression threshold crossed | 1 |
-| `INCONCLUSIVE` | Measurement quality/comparability is not good enough to decide | 2 |
+| `PASS` | Valid comparison; the whole confidence interval is below the threshold | 0 |
+| `FAIL` | Valid comparison; the whole confidence interval is at or past the threshold | 1 |
+| `INCONCLUSIVE` | The interval contains the threshold, or the comparison is not valid | 2 |
 | error | No decision: invalid arguments, schema or files, or an internal error | 3 |
 
 Every command uses these codes: `compare` exits 2 for `UNSTABLE`, and `diagnose` exits 3 when Prometheus cannot be queried. `inference-doctor --version` prints the installed version.
 
 Use `--json` for machine-readable output. See [measurement quality](docs/measurement-quality.md) for the decision semantics and [benchmark format](docs/benchmark-format.md) for the input contract.
 
-The [sanitized H100 reliability example](examples/inference-ci-reliability-001/README.md) preserves a real experiment where the correct result was `INCONCLUSIVE` because baseline measurements were unstable.
+Options: `--regression-percent` (default 10), `--confidence` (default 0.90), `--min-repetitions` (default 3), and `--stability-cv-percent` for an optional CV ceiling.
+
+The [sanitized H100 reliability example](examples/inference-ci-reliability-001/README.md) preserves a real experiment where the correct result is `INCONCLUSIVE`: one noisy baseline block leaves an interval too wide to rule out a 10% regression.
 
 ### Compare two normalized files
 
