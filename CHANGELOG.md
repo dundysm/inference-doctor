@@ -14,6 +14,16 @@
 - The quickstart has five repetitions per side and a `regressed-candidate` directory that demonstrates `FAIL`.
 - The Action passes its inputs to the shell through environment variables instead of interpolating them into the script.
 
+### Fixed: compare and diagnose
+
+- `compare` no longer crashes with `UnboundLocalError` when a baseline value is 0; a rise from 0 in a latency, or a fall to 0 in a throughput, is a failure.
+- `compare` returns `INCONCLUSIVE` (exit 2) instead of `PASS` when no latency or throughput metric is present in both files, and its overall status is `WARN` (still exit 0) when any row is in the warning band.
+- `compare` is deprecated: it prints a notice on stderr pointing to `compare-runs`, and will be removed in a future release.
+- `diagnose`: the queue mean is aggregated across series (`sum(rate(_sum)) / sum(rate(_count))`); with two replicas at 0.2 s it reported 0.4 s. The Prometheus client now refuses a query that returns more than one series instead of adding them up.
+- `diagnose`: `QUEUE_PRESSURE` requires queue evidence (waiting requests, or a mean queue time of at least 20% of TTFT p95). TTFT over its SLO with a healthy TPOT used to be enough, which flagged prefill-heavy workloads as queueing.
+- `diagnose`: a new `PREFILL_PRESSURE` finding covers TTFT over its SLO with no queue evidence and prefill time at least half of TTFT p95. Prefill time and prompt length were collected before but not used.
+- `diagnose` exits 1 when it reports a critical finding; `--fail-on warning|never` changes the threshold. It always exited 0 before.
+
 ### Added: gate several metrics at once
 
 - `--metric` can be repeated (Action: a comma-separated `metric` input). Each metric is compared in full; the combined result is `FAIL` if any metric fails, `INCONCLUSIVE` if none fails but one is inconclusive, and `PASS` only if all pass. The report notes that each extra metric adds a chance of a false alarm. With one metric the report is unchanged; with several it has `metrics` and `comparisons`. The Action's job summary has one row per metric, and a new `report` output holds the JSON report path.

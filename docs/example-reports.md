@@ -23,7 +23,9 @@ No diagnostic conditions were triggered.
 
 ## Queue / capacity pressure
 
-TTFT crosses its SLO while output-token latency stays healthy. Waiting work and elevated KV occupancy raise confidence. Queue p95 is displayed, but is not used to score this finding.
+TTFT crosses its SLO and requests are waiting. Queue evidence is required: waiting requests, or a mean queue time of at least 20% of TTFT p95. Healthy output-token latency and elevated KV occupancy raise confidence. Queue p95 is displayed, but is not used to score this finding, because coarse histogram buckets distort it.
+
+When TTFT is over its SLO with no queue evidence and prefill time accounts for at least half of TTFT p95, the finding is `PREFILL_PRESSURE` instead: long prompts, not admission, are the likely cause.
 
 ```text
 INFERENCE DOCTOR v0.2                         1 critical · 0 warnings

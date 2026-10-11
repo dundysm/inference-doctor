@@ -56,26 +56,22 @@ class PrometheusClient:
         if not results:
             return None
 
-        values: list[float] = []
+        if len(results) > 1:
+            # Every query aggregates to one series. Adding several (for example one per
+            # replica) would be wrong for ratios and quantiles, so refuse instead.
+            raise ValueError(
+                f"Prometheus returned {len(results)} series for a query that should return "
+                f"one: {promql}"
+            )
 
-        for result in results:
-            value = result.get("value")
-
-            if not value or len(value) < 2:
-                continue
-
-            try:
-                scalar = float(value[1])
-            except (TypeError, ValueError):
-                continue
-
-            if math.isfinite(scalar):
-                values.append(scalar)
-
-        if not values:
+        value = results[0].get("value")
+        if not value or len(value) < 2:
             return None
-
-        return sum(values)
+        try:
+            scalar = float(value[1])
+        except (TypeError, ValueError):
+            return None
+        return scalar if math.isfinite(scalar) else None
 
     def close(self) -> None:
         self.client.close()
@@ -126,9 +122,9 @@ def build_snapshot(
 
         queue_mean = client.query(
             f"""
-rate(vllm:request_queue_time_seconds_sum[{window}])
+sum(rate(vllm:request_queue_time_seconds_sum[{window}]))
 /
-rate(vllm:request_queue_time_seconds_count[{window}])
+sum(rate(vllm:request_queue_time_seconds_count[{window}]))
 """.strip()
         )
 

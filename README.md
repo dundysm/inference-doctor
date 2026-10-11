@@ -141,16 +141,17 @@ to stay close to that.
 | Command | What it does |
 | --- | --- |
 | `compare-runs` | The gate: repeated baseline and candidate runs, one or more metrics, `PASS`, `FAIL` or `INCONCLUSIVE`. |
-| `compare` | One normalized file against another, every metric, `PASS`, `WARN`, `FAIL` or `UNSTABLE`. A single run per side cannot measure noise; prefer `compare-runs`. See [upgrade guard](docs/upgrade-guard.md). |
-| `diagnose` | Experimental. Reads a live vLLM server's Prometheus metrics and reports queue, decode and KV-cache pressure. Read-only. See [example reports](docs/example-reports.md). |
+| `compare` | Deprecated. One normalized file against another, every metric. A single run per side cannot measure noise; use `compare-runs`. See [upgrade guard](docs/upgrade-guard.md). |
+| `diagnose` | Experimental. Reads a live vLLM server's Prometheus metrics and reports queue, prefill, decode and KV-cache pressure. Read-only. Exits 1 on a critical finding (`--fail-on` changes that). See [example reports](docs/example-reports.md). |
 
 `compare-runs` options: `--metric` (repeatable), `--regression-percent` (10), `--confidence` (0.90),
 `--min-repetitions` (3), `--stability-cv-percent` (an optional CV ceiling, off),
 `--format` (auto), `--gpu`, `--model`, `--guidellm-benchmark` and `--json`.
 
-**Exit codes**, the same for every command: `0` PASS, `1` FAIL, `2` INCONCLUSIVE (or
-UNSTABLE for `compare`), `3` error with no decision (bad arguments or input, an
-unreachable Prometheus, or an internal error). `inference-doctor --version` prints the
+**Exit codes**, the same for every command: `0` PASS, `1` FAIL (for `diagnose`, a
+finding at or above `--fail-on`), `2` INCONCLUSIVE (or UNSTABLE for `compare`), `3` error
+with no decision (bad arguments or input, an unreachable Prometheus, or an internal
+error). `inference-doctor --version` prints the
 version.
 
 ## What has been measured

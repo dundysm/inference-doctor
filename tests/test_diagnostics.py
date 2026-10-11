@@ -57,31 +57,66 @@ def test_decode_pressure():
 
 
 def test_queue_p95_is_observational_only():
-    low_queue = DiagnosticSnapshot(
-        window_seconds=900,
-        ttft_p95=0.812,
-        ttft_slo=0.400,
-        tpot_p95=0.042,
-        tpot_slo=0.050,
-        queue_time_p95=0.001,
-    )
-    high_queue = DiagnosticSnapshot(
-        window_seconds=900,
-        ttft_p95=0.812,
-        ttft_slo=0.400,
-        tpot_p95=0.042,
-        tpot_slo=0.050,
-        queue_time_p95=4.0,
-    )
+    def snapshot(queue_p95):
+        return DiagnosticSnapshot(
+            window_seconds=900,
+            ttft_p95=0.812,
+            ttft_slo=0.400,
+            tpot_p95=0.042,
+            tpot_slo=0.050,
+            queue_time_p95=queue_p95,
+            requests_waiting=5,
+        )
 
-    low_queue_finding = diagnose(low_queue)[0]
-    high_queue_finding = diagnose(high_queue)[0]
+    low, high = diagnose(snapshot(0.001))[0], diagnose(snapshot(4.0))[0]
+    assert low.id == high.id == "QUEUE_PRESSURE"
+    assert low.confidence_score == high.confidence_score
+    assert all(evidence.metric != "queue_time_p95" for evidence in high.evidence)
 
-    assert low_queue_finding.id == "QUEUE_PRESSURE"
-    assert high_queue_finding.id == "QUEUE_PRESSURE"
-    assert low_queue_finding.confidence_score == 4
-    assert high_queue_finding.confidence_score == 4
-    assert all(evidence.metric != "queue_time_p95" for evidence in high_queue_finding.evidence)
+
+def test_high_ttft_with_healthy_tpot_alone_is_not_queue_pressure():
+    # The pattern of a prefill-heavy workload: no waiting requests, no queue time.
+    snapshot = DiagnosticSnapshot(
+        window_seconds=900,
+        ttft_p95=0.9,
+        ttft_slo=0.4,
+        tpot_p95=0.01,
+        tpot_slo=0.05,
+        requests_waiting=0,
+        queue_mean=0.0,
+        queue_time_p95=0.0,
+    )
+    assert diagnose(snapshot) == []
+
+
+def test_mean_queue_time_is_queue_evidence():
+    snapshot = DiagnosticSnapshot(
+        window_seconds=900,
+        ttft_p95=0.9,
+        ttft_slo=0.4,
+        requests_waiting=0,
+        queue_mean=0.3,
+    )
+    finding = diagnose(snapshot)[0]
+    assert finding.id == "QUEUE_PRESSURE"
+    assert any(evidence.metric == "queue_mean" for evidence in finding.evidence)
+
+
+def test_prefill_bound_ttft_is_reported_as_prefill_not_queue():
+    snapshot = DiagnosticSnapshot(
+        window_seconds=900,
+        ttft_p95=0.9,
+        ttft_slo=0.4,
+        tpot_p95=0.01,
+        tpot_slo=0.05,
+        requests_waiting=0,
+        queue_mean=0.01,
+        prefill_time_p95=0.7,
+        prompt_tokens_p95=7800,
+    )
+    findings = diagnose(snapshot)
+    assert [finding.id for finding in findings] == ["PREFILL_PRESSURE"]
+    assert findings[0].severity.value == "warning"
 
 
 def test_kv_pressure():
@@ -158,7 +193,7 @@ def test_histogram_p95_uses_prometheus_bucket_series():
     assert "sum by (le)" in promql
 
 
-def test_prometheus_client_sums_vector_results():
+def _client_returning(*values):
     class FakeResponse:
         def raise_for_status(self):
             pass
@@ -166,24 +201,80 @@ def test_prometheus_client_sums_vector_results():
         def json(self):
             return {
                 "status": "success",
-                "data": {
-                    "result": [
-                        {"value": [0, "2.5"]},
-                        {"value": [0, "3.5"]},
-                    ]
-                },
+                "data": {"result": [{"value": [0, value]} for value in values]},
             }
 
     class FakeHttpClient:
         def get(self, url, params):
             assert url == "http://prometheus/api/v1/query"
-            assert params == {"query": "sum(vllm:num_requests_waiting)"}
             return FakeResponse()
 
     client = PrometheusClient("http://prometheus")
     client.client = FakeHttpClient()
+    return client
 
-    assert client.query("sum(vllm:num_requests_waiting)") == 6.0
+
+def test_prometheus_client_reads_a_single_series():
+    assert _client_returning("2.5").query("sum(vllm:num_requests_waiting)") == 2.5
+
+
+def test_prometheus_client_refuses_to_add_up_several_series():
+    # Two replicas at 0.2 s each used to be reported as a 0.4 s queue mean.
+    with pytest.raises(ValueError, match="returned 2 series"):
+        _client_returning("0.2", "0.2").query("rate(x_sum[5m]) / rate(x_count[5m])")
+
+
+def test_queue_mean_query_aggregates_across_replicas():
+    queries = []
+
+    class FakePrometheusClient:
+        def __init__(self, prometheus_url):
+            pass
+
+        def query(self, promql):
+            queries.append(promql)
+            return None
+
+        def close(self):
+            pass
+
+    with patch("inference_doctor.collectors.prometheus.PrometheusClient", FakePrometheusClient):
+        build_snapshot(prometheus_url="http://p", window="5m", ttft_slo_ms=None, tpot_slo_ms=None)
+    queue_mean = next(q for q in queries if "request_queue_time_seconds_sum" in q)
+    assert "sum(rate(vllm:request_queue_time_seconds_sum[5m]))" in queue_mean
+    assert "sum(rate(vllm:request_queue_time_seconds_count[5m]))" in queue_mean
+
+
+def _patched_snapshot(snapshot):
+    return patch("inference_doctor.cli.build_snapshot", lambda **kwargs: snapshot)
+
+
+def test_diagnose_exits_1_on_a_critical_finding_and_respects_fail_on():
+    critical = DiagnosticSnapshot(
+        window_seconds=900,
+        ttft_p95=0.9,
+        ttft_slo=0.4,
+        tpot_p95=0.01,
+        tpot_slo=0.05,
+        requests_waiting=12,
+        queue_mean=0.5,
+        kv_cache_usage=0.9,
+    )
+    args = ["diagnose", "--prometheus", "http://p", "--json"]
+    with _patched_snapshot(critical):
+        assert runner.invoke(app, args).exit_code == 1
+        assert runner.invoke(app, [*args, "--fail-on", "never"]).exit_code == 0
+        assert runner.invoke(app, [*args, "--fail-on", "sometimes"]).exit_code == 3
+
+
+def test_diagnose_warning_exits_0_by_default_and_1_with_fail_on_warning():
+    warning = DiagnosticSnapshot(
+        window_seconds=900, ttft_p95=0.2, ttft_slo=0.4, tpot_p95=0.09, tpot_slo=0.05
+    )
+    args = ["diagnose", "--prometheus", "http://p"]
+    with _patched_snapshot(warning):
+        assert runner.invoke(app, args).exit_code == 0
+        assert runner.invoke(app, [*args, "--fail-on", "warning"]).exit_code == 1
 
 
 @pytest.mark.parametrize("value", ["NaN", "+Inf", "-Inf"])
