@@ -18,6 +18,9 @@ with real benchmark results it has not seen. You do not need to write code to he
 * **Ask for a format.** If your benchmark tool's output is not read yet, open a
   [format request](https://github.com/dundysm/inference-doctor/issues/new?template=format_request.yml)
   with an example file.
+* **Pick up an issue** labelled [`good first issue`](https://github.com/dundysm/inference-doctor/labels/good%20first%20issue) or
+  [`help wanted`](https://github.com/dundysm/inference-doctor/labels/help%20wanted). Comment on it first so two people do not do the same work.
+  Issues labelled [`needs GPU`](https://github.com/dundysm/inference-doctor/labels/needs%20GPU) need an NVIDIA GPU to test.
 * **Questions and ideas** go in [Discussions](https://github.com/dundysm/inference-doctor/discussions).
 
 Never include API tokens, credentials, customer prompts, private model names or cloud

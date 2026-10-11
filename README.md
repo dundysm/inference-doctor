@@ -180,6 +180,10 @@ own benchmark and open a **Benchmark feedback** issue saying what it decided, wh
 was right, and what was confusing. Redact prompts, credentials, private model names and
 customer data.
 
+Want to contribute code or docs? Start with an issue labelled
+[good first issue](https://github.com/dundysm/inference-doctor/labels/good%20first%20issue) or [help wanted](https://github.com/dundysm/inference-doctor/labels/help%20wanted); the ones labelled
+[needs GPU](https://github.com/dundysm/inference-doctor/labels/needs%20GPU) are for anyone with access to an NVIDIA GPU.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), and [SUPPORT.md](SUPPORT.md) for where to ask

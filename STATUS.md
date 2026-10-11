@@ -47,7 +47,7 @@ October 11, 2026. inference-doctor 0.4.1 (`pip install inference-doctor`; the Ac
 - `--gpu` and `--model` label both sides at once, so they cannot catch a run on the wrong
   GPU. Only GPU names recorded in the results (vLLM `--metadata`, AIPerf telemetry) are
   compared.
-- `diagnose` is experimental. Its rules are checked against synthetic snapshots. The
+- `diagnose` is experimental (re-verification: #10). Its rules are checked against synthetic snapshots. The
   queue rule changed in 0.4.0 to require queue evidence, and the one real integration run
   of it (E003 in `docs/experiment-log.md`) was recorded under the old rule without the
   waiting-request count, so it has not been re-verified.
@@ -60,6 +60,10 @@ Next, in order:
 1. Follow up on the #52630 validation, shared in that issue's thread on October 11
    ([comment](https://github.com/vllm-project/vllm/issues/52630#issuecomment-6114107998)).
 2. Get the gate running in a project's real CI, with the validity checks on.
+3. Open issues: Markdown output (#3) and a pull request comment from the Action (#4);
+   llmperf (#5) and TensorRT-LLM (#6) formats; a vLLM walkthrough (#7) and a CPU demo
+   workflow (#8); a paired interval for interleaved runs (#9); and re-verifying
+   `diagnose` on a real server (#10).
 
 The #48035 harness under `experiments/` tests a claim its reporter has since retracted (a
 v0.19.1 to v0.24.0 FP16 slowdown caused by configuration drift), so there is nothing to
