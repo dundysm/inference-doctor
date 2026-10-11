@@ -9,6 +9,7 @@ from typer.testing import CliRunner
 from inference_doctor import telemetry
 from inference_doctor.cli import app
 from inference_doctor.quality import (
+    QualityThresholds,
     compare_repeated_runs,
 )
 
@@ -73,24 +74,32 @@ def test_stable_ten_percent_throughput_loss_is_fail():
     assert report["delta_percent"] == pytest.approx(-12.0)
 
 
-def test_unstable_baseline_is_inconclusive():
+def test_noisy_baseline_gives_a_wide_interval_and_inconclusive():
     report = compare_repeated_runs(
-        _runs([100, 115, 100, 100, 100, 100]),
-        _runs([100] * 6, version="0.21.0"),
+        _runs([100, 130, 85, 100, 120, 90]),
+        _runs([95] * 6, version="0.21.0"),
         metric="texts_per_second",
     )
     assert report["result"] == "INCONCLUSIVE"
-    assert "baseline CV 5.97% exceeded the 5% stability threshold" in " ".join(report["reasons"])
+    interval = report["confidence_interval"]
+    assert interval["regression_percent_low"] < 10 <= interval["regression_percent_high"]
+    assert "includes the 10% threshold" in report["reasons"][0]
 
 
-def test_unstable_candidate_is_inconclusive():
-    report = compare_repeated_runs(
-        _runs([100] * 6),
-        _runs([100, 115, 100, 100, 100, 100], version="0.21.0"),
+def test_cv_ceiling_is_opt_in():
+    baseline = _runs([100, 115, 100, 100, 100, 100])
+    candidate = _runs([100] * 6, version="0.21.0")
+    default = compare_repeated_runs(baseline, candidate, metric="texts_per_second")
+    assert default["result"] == "PASS"
+    capped = compare_repeated_runs(
+        baseline,
+        candidate,
         metric="texts_per_second",
+        thresholds=QualityThresholds(stability_cv_percent=5.0),
     )
-    assert report["result"] == "INCONCLUSIVE"
-    assert "candidate CV 5.97% exceeded the 5% stability threshold" in " ".join(report["reasons"])
+    assert capped["result"] == "INCONCLUSIVE"
+    assert capped["reasons"][0] == "baseline CV 5.97% exceeded the 5% stability ceiling"
+    assert capped["measurement_quality"]["baseline_stable"] is False
 
 
 def test_apparent_outlier_remains_included_in_official_calculation():

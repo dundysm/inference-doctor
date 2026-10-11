@@ -268,15 +268,28 @@ def compare_runs_command(
         "--metric",
         help="Metric to compare: " + ", ".join(metric_choices()),
     ),
-    stability_cv_percent: float = typer.Option(
-        5.0,
-        "--stability-cv-percent",
-        help="Maximum allowed CV for each repeated run set.",
-    ),
     regression_percent: float = typer.Option(
         10.0,
         "--regression-percent",
-        help="Regression threshold for a stable candidate.",
+        help="FAIL when the whole confidence interval for the regression is at or past this "
+        "percentage; PASS when the whole interval is below it.",
+    ),
+    confidence: float = typer.Option(
+        0.90,
+        "--confidence",
+        help="Two-sided confidence level of the interval (0.90 makes each bound a one-sided "
+        "95% bound).",
+    ),
+    min_repetitions: int = typer.Option(
+        3,
+        "--min-repetitions",
+        help="Repetitions required on each side. 5 or more is recommended.",
+    ),
+    stability_cv_percent: float | None = typer.Option(
+        None,
+        "--stability-cv-percent",
+        help="Optional ceiling on each side's CV. Off by default: the confidence interval "
+        "already widens with noise.",
     ),
     json_output: bool = typer.Option(False, "--json"),
 ) -> None:
@@ -286,8 +299,10 @@ def compare_runs_command(
             candidate,
             metric=metric,
             thresholds=QualityThresholds(
-                stability_cv_percent=stability_cv_percent,
                 regression_percent=regression_percent,
+                confidence=confidence,
+                min_repetitions=min_repetitions,
+                stability_cv_percent=stability_cv_percent,
             ),
         )
     except (BenchmarkResultError, QualityInputError, ValueError) as exc:

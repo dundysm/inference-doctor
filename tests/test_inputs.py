@@ -69,21 +69,22 @@ def test_missing_metric_says_missing_not_unstable(tmp_path):
     ]
 
 
-def test_single_repetition_says_too_few_not_unstable(tmp_path):
+def test_too_few_repetitions_names_the_minimum(tmp_path):
     _write_side(tmp_path / "b", [1000])
-    _write_side(tmp_path / "c", [1000, 1001])
-    report = load_and_compare_directories(tmp_path / "b", tmp_path / "c")
-    assert report["result"] == "INCONCLUSIVE"
-    assert report["reasons"] == [
-        "baseline has 1 repetition; at least two are required to measure stability"
-    ]
-
-
-def test_unstable_reason_states_the_measured_cv(tmp_path):
-    _write_side(tmp_path / "b", [1000, 1300, 1000])
     _write_side(tmp_path / "c", [1000, 1001, 1002])
     report = load_and_compare_directories(tmp_path / "b", tmp_path / "c")
-    assert report["reasons"] == ["baseline CV 15.75% exceeded the 5% stability threshold"]
+    assert report["result"] == "INCONCLUSIVE"
+    assert report["reasons"] == ["baseline has 1 repetition(s); at least 3 are required"]
+    assert report["confidence_interval"]["available"] is False
+
+
+def test_too_few_repetitions_still_reports_the_interval(tmp_path):
+    _write_side(tmp_path / "b", [1000, 1001])
+    _write_side(tmp_path / "c", [1000, 1001, 1002])
+    report = load_and_compare_directories(tmp_path / "b", tmp_path / "c")
+    assert report["result"] == "INCONCLUSIVE"
+    assert report["reasons"][0] == "baseline has 2 repetition(s); at least 3 are required"
+    assert report["reasons"][1].startswith("for reference, the 90% confidence interval")
 
 
 def test_non_finite_metric_is_reported_as_missing_or_non_finite():

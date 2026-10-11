@@ -86,7 +86,7 @@ Example parameters worth recording include concurrency, request count or duratio
 
 ## Directory layout
 
-At least two repetitions per side are required for a stability decision.
+At least three repetitions per side are required (`--min-repetitions`); five or more is recommended. See [gate calibration](gate-calibration.md).
 
 ```text
 artifacts/
