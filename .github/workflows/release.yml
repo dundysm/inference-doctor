@@ -51,6 +51,8 @@ jobs:
       - run: python -m build
       - run: twine check --strict dist/*
       - name: The sdist's own test suite passes
+        env:
+          TYPER_USE_RICH: "0"  # as in ci.yml
         run: |
           mkdir /tmp/sdist && tar xzf dist/*.tar.gz -C /tmp/sdist
           cd /tmp/sdist/inference_doctor-*

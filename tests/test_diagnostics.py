@@ -1,3 +1,4 @@
+import re
 from unittest.mock import patch
 
 import pytest
@@ -341,7 +342,8 @@ def test_cli_exposes_documented_diagnose_command():
     result = runner.invoke(app, ["diagnose", "--help"])
 
     assert result.exit_code == 0
-    assert "--prometheus" in result.output
+    # Rich colours the help where it detects CI; the escape codes split option names.
+    assert "--prometheus" in re.sub(r"\x1b\[[0-9;]*m", "", result.output)
 
 
 def test_cli_reports_snapshot_collection_errors():
