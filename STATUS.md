@@ -57,7 +57,8 @@ October 11, 2026. inference-doctor 0.4.1 (`pip install inference-doctor`; the Ac
 
 Next, in order:
 
-1. Share the #52630 validation in that issue's thread (drafted, not yet posted).
+1. Follow up on the #52630 validation, shared in that issue's thread on October 11
+   ([comment](https://github.com/vllm-project/vllm/issues/52630#issuecomment-6114107998)).
 2. Get the gate running in a project's real CI, with the validity checks on.
 
 The #48035 harness under `experiments/` tests a claim its reporter has since retracted (a
