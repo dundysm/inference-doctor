@@ -1,0 +1,4 @@
+graft tests
+graft examples
+include CHANGELOG.md CONTRIBUTING.md
+global-exclude __pycache__ *.py[co]

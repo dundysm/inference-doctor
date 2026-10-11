@@ -1,14 +1,42 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "inference-doctor"
-version = "0.3.0"
-description = "Trustworthy performance regression testing for LLM inference."
+dynamic = ["version"]
+description = "Performance regression gate for LLM inference benchmarks that checks measurement quality before it judges a regression."
 readme = "README.md"
-license = { text = "Apache-2.0" }
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
+authors = [{ name = "Dundy Pasupuleti", email = "dundysm@gmail.com" }]
+keywords = [
+    "llm",
+    "inference",
+    "benchmark",
+    "performance-regression",
+    "vllm",
+    "continuous-integration",
+    "github-action",
+    "measurement-quality",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Testing",
+]
 dependencies = [
     "httpx>=0.27",
     "rich>=13.7",
@@ -16,12 +44,42 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Tests, lint and type checks. CI installs the same ruff version.
 dev = [
     "pytest>=8.0",
+    "ruff==0.17.0",
+    "mypy>=1.10",
 ]
+
+[project.urls]
+Homepage = "https://github.com/dundysm/inference-doctor"
+Source = "https://github.com/dundysm/inference-doctor"
+Issues = "https://github.com/dundysm/inference-doctor/issues"
+Changelog = "https://github.com/dundysm/inference-doctor/blob/main/CHANGELOG.md"
 
 [project.scripts]
 inference-doctor = "inference_doctor.cli:app"
+
+[tool.setuptools.dynamic]
+version = { attr = "inference_doctor.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["B905", "E501"]
+
+[tool.ruff.lint.flake8-bugbear]
+# typer declares CLI options as call defaults by design.
+extend-immutable-calls = ["typer.Option", "typer.Argument"]
+
+[tool.mypy]
+files = ["src/inference_doctor"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
