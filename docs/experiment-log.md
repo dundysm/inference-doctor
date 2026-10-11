@@ -24,6 +24,12 @@ The public reproduction steps are in [local-integration.md](local-integration.md
 | E012 high KV, healthy | One long sequence with a constrained KV cache | KV usage 90.1%; zero waiting requests; zero preemptions | No finding | No finding |
 | E013 KV pressure | Four long concurrent sequences using the same constrained cache | KV usage 92.2%; three waiting requests; zero preemptions | `KV_CACHE_PRESSURE` | `KV_CACHE_PRESSURE` |
 
+> **Note for 0.4.0.** These outcomes were recorded with the v0.2 rules. In 0.4.0,
+> `QUEUE_PRESSURE` requires queue evidence: waiting requests, or a mean queue time of at
+> least 20% of TTFT p95. E003 was recorded from TTFT and TPOT alone, without the waiting
+> count or queue mean, so whether it still yields `QUEUE_PRESSURE` (rather than no finding,
+> or `PREFILL_PRESSURE`) is not verified. It needs a re-run.
+
 ## Queue histogram interpretation
 
 The healthy baseline reported queue p95 of about 285 ms while TTFT p95 was about 39 ms. Raw queue samples fell into the first available 0.3-second queue histogram bucket, while TTFT used much finer buckets around 0.02 to 0.04 seconds. Prometheus interpolates each histogram quantile independently, so these p95 values are not paired timings from the same request.

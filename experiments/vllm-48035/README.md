@@ -1,5 +1,11 @@
 # Reproduction harness for vLLM issue #48035
 
+> **Status, October 2026.** The issue's reporter has retracted the claim this harness
+> tests: the v0.19.1 to v0.24.0 FP16 slowdown came from mismatched serving flags on their
+> host, and at matched flags the difference was about 2 to 3%. The issue now concerns the
+> official FP8 checkpoint's Triton kernel at batch size 1, which this harness does not
+> test. It is kept as a record of the method.
+
 This experiment tests the FP16 version-to-version decode-throughput regression reported in [vLLM issue #48035](https://github.com/vllm-project/vllm/issues/48035): approximately 136–137 decode tokens/s on vLLM 0.19.1 versus 98 tokens/s on vLLM 0.24.0 for a single RTX 4090 at sequential batch size 1.
 
 The harness does not diagnose, tune, or alter either server. It runs a fixed workload, preserves raw request records, normalizes each repetition for `inference-doctor compare`, aggregates repetitions, and runs two same-version controls plus the cross-version comparison.

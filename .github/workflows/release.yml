@@ -9,7 +9,8 @@ name: release
 #   1. the tagged commit is on main,
 #   2. the full CI workflow passes on it,
 #   3. the tag equals the package version (v0.4.0 for __version__ = "0.4.0"),
-#   4. the sdist and wheel pass twine check --strict, and the wheel installs and runs.
+#   4. the sdist and wheel pass twine check --strict, the sdist's tests pass, and the
+#      wheel installs and runs.
 
 on:
   push:
@@ -49,6 +50,13 @@ jobs:
       - run: pip install build twine
       - run: python -m build
       - run: twine check --strict dist/*
+      - name: The sdist's own test suite passes
+        run: |
+          mkdir /tmp/sdist && tar xzf dist/*.tar.gz -C /tmp/sdist
+          cd /tmp/sdist/inference_doctor-*
+          python -m venv /tmp/sdist-venv
+          /tmp/sdist-venv/bin/pip install --quiet ".[dev]"
+          /tmp/sdist-venv/bin/python -m pytest -q
       - name: The wheel installs and runs
         run: |
           python -m venv /tmp/wheel-check

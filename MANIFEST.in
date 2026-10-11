@@ -1,5 +1,8 @@
 graft tests
 graft examples
+graft docs
+graft experiments
+prune experiments/*/results
 include CHANGELOG.md CONTRIBUTING.md STATUS.md CITATION.cff SECURITY.md SUPPORT.md CODE_OF_CONDUCT.md
 recursive-include tools *.py
 global-exclude __pycache__ *.py[co]
