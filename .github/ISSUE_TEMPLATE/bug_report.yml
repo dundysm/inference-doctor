@@ -1,0 +1,61 @@
+name: Bug report
+description: A crash, a result file read wrongly, or a verdict you think is wrong
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. The command and its full output are what make a report usable.
+        Redact prompts, credentials, private model names and customer data first.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command
+      description: The exact inference-doctor command, or the Action step's inputs.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: The full output, ideally with --json, or the traceback (set INFERENCE_DOCTOR_DEBUG=1).
+      render: text
+  - type: dropdown
+    id: format
+    attributes:
+      label: Result format
+      options:
+        - vLLM bench serve
+        - AIPerf / GenAI-Perf
+        - GuideLLM
+        - SGLang bench_serving
+        - normalized
+        - not about compare-runs
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: A sample result file
+      description: If a file is read wrongly, one redacted repetition helps most, plus the tool's version.
+      render: json
+  - type: input
+    id: version
+    attributes:
+      label: inference-doctor version
+      placeholder: "inference-doctor --version"
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Python and OS
+      placeholder: "Python 3.12, Ubuntu 24.04"

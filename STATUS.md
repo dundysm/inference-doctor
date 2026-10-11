@@ -48,6 +48,5 @@ October 11, 2026. inference-doctor 0.4.0 (`pip install inference-doctor`; the Ac
 
 Next, in order:
 
-1. Community files: security policy, code of conduct, support, citation, issue forms.
-2. Run the gate on the upstream vLLM regressions reproduced under `experiments/`
+1. Run the gate on the upstream vLLM regressions reproduced under `experiments/`
    (vllm-project/vllm#48035 and #52630) and share the results there.

@@ -1,5 +1,5 @@
 graft tests
 graft examples
-include CHANGELOG.md CONTRIBUTING.md STATUS.md
+include CHANGELOG.md CONTRIBUTING.md STATUS.md CITATION.cff SECURITY.md SUPPORT.md CODE_OF_CONDUCT.md
 recursive-include tools *.py
 global-exclude __pycache__ *.py[co]

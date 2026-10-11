@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/dundysm/inference-doctor/discussions
+    about: How-to questions and ideas go in Discussions.
+  - name: Security report
+    url: https://github.com/dundysm/inference-doctor/security/advisories/new
+    about: Please report vulnerabilities privately.

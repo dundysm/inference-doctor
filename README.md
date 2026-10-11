@@ -177,7 +177,9 @@ customer data.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). The changelog is [CHANGELOG.md](CHANGELOG.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md), and [SUPPORT.md](SUPPORT.md) for where to ask
+what. Security reports go through [SECURITY.md](SECURITY.md). The changelog is
+[CHANGELOG.md](CHANGELOG.md), and [CITATION.cff](CITATION.cff) says how to cite the project.
 The experiments that informed the design live under `experiments/`.
 
 ```bash

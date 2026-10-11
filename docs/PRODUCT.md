@@ -10,16 +10,16 @@ The product returns exactly three decision states: `PASS`, `FAIL`, or `INCONCLUS
 
 Current focus:
 
-- repeated baseline vs candidate comparisons
-- measurement-quality checks before regression decisions
+- repeated baseline vs candidate comparisons, decided by a confidence interval
+- validity checks (environment, failed requests, missing metrics, repetitions) before any decision
+- reading the result files benchmark tools already write (vLLM, AIPerf, GuideLLM, SGLang),
+  plus a small normalized format for anything else
 - CLI + GitHub Action integration
-- simple, auditable normalized benchmark inputs
 
 Intentionally out of scope for now:
 
-- hosted GPU provisioning
-- dashboards/SaaS
+- running benchmarks or provisioning GPUs
+- dashboards/SaaS or a history of past runs
 - automatic tuning
 - Kubernetes operators
-- automated root-cause diagnosis
-- broad multi-runtime support
+- automated root-cause diagnosis (`diagnose` reports patterns, not causes)

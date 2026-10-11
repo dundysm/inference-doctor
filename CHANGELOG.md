@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Community files: `SECURITY.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`, `CITATION.cff`, bug-report and format-request issue forms, an issue-template config and a pull request template. `CONTRIBUTING.md` is rewritten around ways to help, where things are, and how to add a format.
+- Removed `docs/competitive-gap.md`, a comparison written against 0.2 whose claims about another project were not re-verified.
+
 ## 0.4.0 - 2026-10-11
 
 ### Changed: the compare-runs decision rule

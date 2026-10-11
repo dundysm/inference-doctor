@@ -75,3 +75,8 @@ def test_internal_error_exits_3_without_traceback(tmp_path, monkeypatch):
     assert result.exit_code == EXIT_ERROR
     assert "internal error: RuntimeError: synthetic failure" in result.output
     assert "Traceback" not in result.output
+
+
+def test_citation_version_matches_package():
+    citation = (Path(__file__).parent.parent / "CITATION.cff").read_text(encoding="utf-8")
+    assert f"\nversion: {__version__}\n" in citation

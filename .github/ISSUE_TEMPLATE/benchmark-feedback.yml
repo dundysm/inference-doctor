@@ -32,7 +32,7 @@ body:
     id: metric
     attributes:
       label: Metric and thresholds
-      placeholder: "output_token_throughput; 5% stability CV; 10% regression"
+      placeholder: "output_token_throughput, ttft_p99_ms; 10% regression; 5 runs per side"
 
   - type: textarea
     id: change
@@ -53,7 +53,7 @@ body:
     id: friction
     attributes:
       label: What was confusing or missing?
-      description: Installation, benchmark normalization, CI wiring, result semantics, or anything else.
+      description: Installation, reading your result files, CI wiring, result semantics, or anything else.
     validations:
       required: true
 

@@ -1,0 +1,34 @@
+name: Format request
+description: Ask for compare-runs to read another benchmark tool's results
+labels: [enhancement, format]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Inference Doctor reads vLLM bench serve, AIPerf, GenAI-Perf, GuideLLM and SGLang results today
+        (see docs/input-formats.md). A real, redacted result file is what makes a new reader possible.
+  - type: input
+    id: tool
+    attributes:
+      label: Tool and version
+      placeholder: "llmperf 0.x, TensorRT-LLM benchmark, a custom harness..."
+    validations:
+      required: true
+  - type: input
+    id: command
+    attributes:
+      label: Command that writes the result file
+      placeholder: "the benchmark command and the flag that saves results"
+  - type: textarea
+    id: sample
+    attributes:
+      label: One result file
+      description: One repetition, redacted. Remove prompts and any private names first.
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Metrics you would gate on
+      placeholder: "output throughput, TTFT p99"
