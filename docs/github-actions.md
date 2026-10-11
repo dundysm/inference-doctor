@@ -8,7 +8,7 @@ It does not provision GPUs or decide how to benchmark your model. Your workflow 
 
 ```yaml
 - name: Check inference performance
-  uses: dundysm/inference-doctor@main
+  uses: dundysm/inference-doctor@v1
   with:
     baseline: artifacts/baseline
     candidate: artifacts/candidate
@@ -47,12 +47,19 @@ jobs:
         run: ./scripts/run-inference-benchmarks.sh
 
       - name: Gate performance regression
-        uses: dundysm/inference-doctor@main
+        uses: dundysm/inference-doctor@v1
         with:
           baseline: artifacts/baseline
           candidate: artifacts/candidate
           metric: output_token_throughput
 ```
+
+`@v1` follows the latest 0.x release that keeps these inputs and outputs. Pin a full
+version (`@v0.4.0`) or a commit SHA if you need it never to move.
+
+The Action installs Inference Doctor into its own virtual environment, so it does not
+touch the packages in your job's Python. It needs Python 3.11 or newer on the runner,
+from `actions/setup-python` or the runner image.
 
 ## Outputs
 

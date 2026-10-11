@@ -1,7 +1,7 @@
 # Status
 
-October 11, 2026. Unreleased work on `main` after 0.3.0; not on PyPI yet. Install from
-a clone (`python -m pip install .`). See the [README](README.md) for what the tool does.
+October 11, 2026. inference-doctor 0.4.0 (`pip install inference-doctor`; the Action as
+`dundysm/inference-doctor@v1`). See the [README](README.md) for what the tool does.
 
 ## What works
 
@@ -48,8 +48,6 @@ a clone (`python -m pip install .`). See the [README](README.md) for what the to
 
 Next, in order:
 
-1. Publish to PyPI with trusted publishing, tag the Action as `v1`, and install the
-   Action into its own environment instead of the caller's Python.
-2. Community files: security policy, code of conduct, support, citation, issue forms.
-3. Run the gate on the upstream vLLM regressions reproduced under `experiments/`
+1. Community files: security policy, code of conduct, support, citation, issue forms.
+2. Run the gate on the upstream vLLM regressions reproduced under `experiments/`
    (vllm-project/vllm#48035 and #52630) and share the results there.

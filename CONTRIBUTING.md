@@ -40,4 +40,14 @@ ruff check . && ruff format --check . && mypy
 
 CI runs the same checks, with tests on Python 3.11 and 3.14 on Linux and on 3.14 on macOS and Windows.
 
+## Releasing
+
+1. Move the `## Unreleased` entries in `CHANGELOG.md` under `## X.Y.Z - date` and set
+   `__version__` in `src/inference_doctor/__init__.py` to `X.Y.Z`. Commit to `main`.
+2. Once CI is green, tag and push: `git tag vX.Y.Z && git push origin vX.Y.Z`. The
+   release workflow checks the tag, builds, and publishes to PyPI through trusted
+   publishing.
+3. Move the Action's major tag to the release when its inputs and outputs are compatible:
+   `git tag -f v1 vX.Y.Z && git push -f origin v1`.
+
 Use clear commit messages and describe the validation performed in the pull request.

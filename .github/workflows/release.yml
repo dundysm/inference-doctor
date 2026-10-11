@@ -13,7 +13,8 @@ name: release
 
 on:
   push:
-    tags: ["v*"]
+    # Full versions only; the Action's moving major tag (v1) must not start a release.
+    tags: ["v*.*.*"]
 
 permissions:
   contents: read

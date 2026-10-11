@@ -3,6 +3,7 @@
 </p>
 
 <p align="center">
+  <a href="https://pypi.org/project/inference-doctor/"><img alt="PyPI" src="https://img.shields.io/pypi/v/inference-doctor?color=3776ab"></a>
   <a href="https://github.com/dundysm/inference-doctor/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dundysm/inference-doctor/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776ab">
   <img alt="Reads vLLM, AIPerf, GuideLLM and SGLang" src="https://img.shields.io/badge/reads-vLLM%2C%20AIPerf%2C%20GuideLLM%2C%20SGLang-1f6feb">
@@ -53,12 +54,12 @@ hidden. Details and references: [measurement quality](docs/measurement-quality.m
 
 ## Quick start
 
-Python 3.11 or newer. No GPU: the example results are checked in.
+Python 3.11 or newer. No GPU: the example results are checked in, so the clone is only for
+them.
 
 ```bash
-git clone https://github.com/dundysm/inference-doctor.git
-cd inference-doctor
-python -m pip install .
+pip install inference-doctor
+git clone https://github.com/dundysm/inference-doctor.git && cd inference-doctor
 
 inference-doctor compare-runs \
   --baseline examples/quickstart/baseline \
@@ -106,7 +107,7 @@ Run your benchmark on your own GPU runner, then gate on the results:
 
 ```yaml
 - name: Gate inference performance
-  uses: dundysm/inference-doctor@main
+  uses: dundysm/inference-doctor@v1
   with:
     baseline: results/main
     candidate: results/my-branch

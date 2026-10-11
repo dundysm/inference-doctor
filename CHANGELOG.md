@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.4.0 - 2026-10-11
+
 ### Changed: the compare-runs decision rule
 
 - `compare-runs` decides with a confidence interval instead of a CV cut followed by a fixed threshold on the difference of means. It computes a Welch t interval on the log ratio of means (90% two-sided by default): `FAIL` when the whole interval for the regression is at or past `--regression-percent`, `PASS` when the whole interval is below it, and `INCONCLUSIVE` when it contains the threshold. Validity checks (environments, failed requests, missing metrics, repetition count) still come first.
