@@ -19,135 +19,135 @@
         font-weight: 700;
     }
 
-    .terminal-1887868792-matrix {
+    .terminal-686803829-matrix {
         font-family: Fira Code, monospace;
         font-size: 20px;
         line-height: 24.4px;
         font-variant-east-asian: full-width;
     }
 
-    .terminal-1887868792-title {
+    .terminal-686803829-title {
         font-size: 18px;
         font-weight: bold;
         font-family: arial;
     }
 
-    .terminal-1887868792-r1 { fill: #878787 }
-.terminal-1887868792-r2 { fill: #d9d9d9 }
-.terminal-1887868792-r3 { fill: #d9d9d9;font-weight: bold }
-.terminal-1887868792-r4 { fill: #fd971f }
-.terminal-1887868792-r5 { fill: #58d1eb;font-weight: bold }
+    .terminal-686803829-r1 { fill: #878787 }
+.terminal-686803829-r2 { fill: #d9d9d9 }
+.terminal-686803829-r3 { fill: #d9d9d9;font-weight: bold }
+.terminal-686803829-r4 { fill: #fd971f }
+.terminal-686803829-r5 { fill: #58d1eb;font-weight: bold }
     </style>
 
     <defs>
-    <clipPath id="terminal-1887868792-clip-terminal">
+    <clipPath id="terminal-686803829-clip-terminal">
       <rect x="0" y="0" width="1267.8" height="584.5999999999999" />
     </clipPath>
-    <clipPath id="terminal-1887868792-line-0">
+    <clipPath id="terminal-686803829-line-0">
     <rect x="0" y="1.5" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-1">
+<clipPath id="terminal-686803829-line-1">
     <rect x="0" y="25.9" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-2">
+<clipPath id="terminal-686803829-line-2">
     <rect x="0" y="50.3" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-3">
+<clipPath id="terminal-686803829-line-3">
     <rect x="0" y="74.7" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-4">
+<clipPath id="terminal-686803829-line-4">
     <rect x="0" y="99.1" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-5">
+<clipPath id="terminal-686803829-line-5">
     <rect x="0" y="123.5" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-6">
+<clipPath id="terminal-686803829-line-6">
     <rect x="0" y="147.9" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-7">
+<clipPath id="terminal-686803829-line-7">
     <rect x="0" y="172.3" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-8">
+<clipPath id="terminal-686803829-line-8">
     <rect x="0" y="196.7" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-9">
+<clipPath id="terminal-686803829-line-9">
     <rect x="0" y="221.1" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-10">
+<clipPath id="terminal-686803829-line-10">
     <rect x="0" y="245.5" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-11">
+<clipPath id="terminal-686803829-line-11">
     <rect x="0" y="269.9" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-12">
+<clipPath id="terminal-686803829-line-12">
     <rect x="0" y="294.3" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-13">
+<clipPath id="terminal-686803829-line-13">
     <rect x="0" y="318.7" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-14">
+<clipPath id="terminal-686803829-line-14">
     <rect x="0" y="343.1" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-15">
+<clipPath id="terminal-686803829-line-15">
     <rect x="0" y="367.5" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-16">
+<clipPath id="terminal-686803829-line-16">
     <rect x="0" y="391.9" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-17">
+<clipPath id="terminal-686803829-line-17">
     <rect x="0" y="416.3" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-18">
+<clipPath id="terminal-686803829-line-18">
     <rect x="0" y="440.7" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-19">
+<clipPath id="terminal-686803829-line-19">
     <rect x="0" y="465.1" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-20">
+<clipPath id="terminal-686803829-line-20">
     <rect x="0" y="489.5" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-21">
+<clipPath id="terminal-686803829-line-21">
     <rect x="0" y="513.9" width="1268.8" height="24.65"/>
             </clipPath>
-<clipPath id="terminal-1887868792-line-22">
+<clipPath id="terminal-686803829-line-22">
     <rect x="0" y="538.3" width="1268.8" height="24.65"/>
             </clipPath>
     </defs>
 
-    <rect fill="#0c0c0c" stroke="rgba(255,255,255,0.35)" stroke-width="1" x="1" y="1" width="1285" height="633.6" rx="8"/><text class="terminal-1887868792-title" fill="#d9d9d9" text-anchor="middle" x="642" y="27">inference-doctor</text>
+    <rect fill="#0c0c0c" stroke="rgba(255,255,255,0.35)" stroke-width="1" x="1" y="1" width="1285" height="633.6" rx="8"/><text class="terminal-686803829-title" fill="#d9d9d9" text-anchor="middle" x="642" y="27">inference-doctor</text>
             <g transform="translate(26,22)">
             <circle cx="0" cy="0" r="7" fill="#ff5f57"/>
             <circle cx="22" cy="0" r="7" fill="#febc2e"/>
             <circle cx="44" cy="0" r="7" fill="#28c840"/>
             </g>
         
-    <g transform="translate(9, 41)" clip-path="url(#terminal-1887868792-clip-terminal)">
+    <g transform="translate(9, 41)" clip-path="url(#terminal-686803829-clip-terminal)">
     
-    <g class="terminal-1887868792-matrix">
-    <text class="terminal-1887868792-r1" x="0" y="20" textLength="12.2" clip-path="url(#terminal-1887868792-line-0)">$</text><text class="terminal-1887868792-r2" x="12.2" y="20" textLength="1220" clip-path="url(#terminal-1887868792-line-0)">&#160;inference-doctor&#160;compare-runs&#160;--baseline&#160;baseline/&#160;--candidate&#160;candidate/&#160;--metric&#160;texts_per_second</text><text class="terminal-1887868792-r2" x="1268.8" y="20" textLength="12.2" clip-path="url(#terminal-1887868792-line-0)">
-</text><text class="terminal-1887868792-r3" x="0" y="44.4" textLength="146.4" clip-path="url(#terminal-1887868792-line-1)">INFERENCE&#160;CI</text><text class="terminal-1887868792-r2" x="1268.8" y="44.4" textLength="12.2" clip-path="url(#terminal-1887868792-line-1)">
-</text><text class="terminal-1887868792-r2" x="0" y="68.8" textLength="97.6" clip-path="url(#terminal-1887868792-line-2)">RESULT:&#160;</text><text class="terminal-1887868792-r4" x="97.6" y="68.8" textLength="146.4" clip-path="url(#terminal-1887868792-line-2)">INCONCLUSIVE</text><text class="terminal-1887868792-r2" x="1268.8" y="68.8" textLength="12.2" clip-path="url(#terminal-1887868792-line-2)">
-</text><text class="terminal-1887868792-r2" x="0" y="93.2" textLength="305" clip-path="url(#terminal-1887868792-line-3)">Metric:&#160;Texts&#160;per&#160;second&#160;</text><text class="terminal-1887868792-r3" x="305" y="93.2" textLength="12.2" clip-path="url(#terminal-1887868792-line-3)">(</text><text class="terminal-1887868792-r2" x="317.2" y="93.2" textLength="414.8" clip-path="url(#terminal-1887868792-line-3)">texts_per_second,&#160;higher&#160;is&#160;better</text><text class="terminal-1887868792-r3" x="732" y="93.2" textLength="12.2" clip-path="url(#terminal-1887868792-line-3)">)</text><text class="terminal-1887868792-r2" x="1268.8" y="93.2" textLength="12.2" clip-path="url(#terminal-1887868792-line-3)">
-</text><text class="terminal-1887868792-r2" x="0" y="117.6" textLength="305" clip-path="url(#terminal-1887868792-line-4)">Input:&#160;normalized&#160;results</text><text class="terminal-1887868792-r2" x="1268.8" y="117.6" textLength="12.2" clip-path="url(#terminal-1887868792-line-4)">
-</text><text class="terminal-1887868792-r2" x="0" y="142" textLength="463.6" clip-path="url(#terminal-1887868792-line-5)">┌─────────────┬──────────┬───────────┐</text><text class="terminal-1887868792-r2" x="1268.8" y="142" textLength="12.2" clip-path="url(#terminal-1887868792-line-5)">
-</text><text class="terminal-1887868792-r2" x="0" y="166.4" textLength="12.2" clip-path="url(#terminal-1887868792-line-6)">│</text><text class="terminal-1887868792-r2" x="170.8" y="166.4" textLength="12.2" clip-path="url(#terminal-1887868792-line-6)">│</text><text class="terminal-1887868792-r3" x="195.2" y="166.4" textLength="97.6" clip-path="url(#terminal-1887868792-line-6)">Baseline</text><text class="terminal-1887868792-r2" x="305" y="166.4" textLength="12.2" clip-path="url(#terminal-1887868792-line-6)">│</text><text class="terminal-1887868792-r3" x="329.4" y="166.4" textLength="109.8" clip-path="url(#terminal-1887868792-line-6)">Candidate</text><text class="terminal-1887868792-r2" x="451.4" y="166.4" textLength="12.2" clip-path="url(#terminal-1887868792-line-6)">│</text><text class="terminal-1887868792-r2" x="1268.8" y="166.4" textLength="12.2" clip-path="url(#terminal-1887868792-line-6)">
-</text><text class="terminal-1887868792-r2" x="0" y="190.8" textLength="463.6" clip-path="url(#terminal-1887868792-line-7)">├─────────────┼──────────┼───────────┤</text><text class="terminal-1887868792-r2" x="1268.8" y="190.8" textLength="12.2" clip-path="url(#terminal-1887868792-line-7)">
-</text><text class="terminal-1887868792-r2" x="0" y="215.2" textLength="12.2" clip-path="url(#terminal-1887868792-line-8)">│</text><text class="terminal-1887868792-r3" x="24.4" y="215.2" textLength="134.2" clip-path="url(#terminal-1887868792-line-8)">repetitions</text><text class="terminal-1887868792-r2" x="170.8" y="215.2" textLength="12.2" clip-path="url(#terminal-1887868792-line-8)">│</text><text class="terminal-1887868792-r2" x="195.2" y="215.2" textLength="97.6" clip-path="url(#terminal-1887868792-line-8)">&#160;&#160;&#160;&#160;&#160;&#160;&#160;6</text><text class="terminal-1887868792-r2" x="305" y="215.2" textLength="12.2" clip-path="url(#terminal-1887868792-line-8)">│</text><text class="terminal-1887868792-r2" x="329.4" y="215.2" textLength="109.8" clip-path="url(#terminal-1887868792-line-8)">&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;6</text><text class="terminal-1887868792-r2" x="451.4" y="215.2" textLength="12.2" clip-path="url(#terminal-1887868792-line-8)">│</text><text class="terminal-1887868792-r2" x="1268.8" y="215.2" textLength="12.2" clip-path="url(#terminal-1887868792-line-8)">
-</text><text class="terminal-1887868792-r2" x="0" y="239.6" textLength="12.2" clip-path="url(#terminal-1887868792-line-9)">│</text><text class="terminal-1887868792-r3" x="24.4" y="239.6" textLength="134.2" clip-path="url(#terminal-1887868792-line-9)">mean&#160;&#160;&#160;&#160;&#160;&#160;&#160;</text><text class="terminal-1887868792-r2" x="170.8" y="239.6" textLength="12.2" clip-path="url(#terminal-1887868792-line-9)">│</text><text class="terminal-1887868792-r2" x="195.2" y="239.6" textLength="97.6" clip-path="url(#terminal-1887868792-line-9)">&#160;2251.22</text><text class="terminal-1887868792-r2" x="305" y="239.6" textLength="12.2" clip-path="url(#terminal-1887868792-line-9)">│</text><text class="terminal-1887868792-r2" x="329.4" y="239.6" textLength="109.8" clip-path="url(#terminal-1887868792-line-9)">&#160;&#160;2156.78</text><text class="terminal-1887868792-r2" x="451.4" y="239.6" textLength="12.2" clip-path="url(#terminal-1887868792-line-9)">│</text><text class="terminal-1887868792-r2" x="1268.8" y="239.6" textLength="12.2" clip-path="url(#terminal-1887868792-line-9)">
-</text><text class="terminal-1887868792-r2" x="0" y="264" textLength="12.2" clip-path="url(#terminal-1887868792-line-10)">│</text><text class="terminal-1887868792-r3" x="24.4" y="264" textLength="134.2" clip-path="url(#terminal-1887868792-line-10)">median&#160;&#160;&#160;&#160;&#160;</text><text class="terminal-1887868792-r2" x="170.8" y="264" textLength="12.2" clip-path="url(#terminal-1887868792-line-10)">│</text><text class="terminal-1887868792-r2" x="195.2" y="264" textLength="97.6" clip-path="url(#terminal-1887868792-line-10)">&#160;2173.17</text><text class="terminal-1887868792-r2" x="305" y="264" textLength="12.2" clip-path="url(#terminal-1887868792-line-10)">│</text><text class="terminal-1887868792-r2" x="329.4" y="264" textLength="109.8" clip-path="url(#terminal-1887868792-line-10)">&#160;&#160;2142.29</text><text class="terminal-1887868792-r2" x="451.4" y="264" textLength="12.2" clip-path="url(#terminal-1887868792-line-10)">│</text><text class="terminal-1887868792-r2" x="1268.8" y="264" textLength="12.2" clip-path="url(#terminal-1887868792-line-10)">
-</text><text class="terminal-1887868792-r2" x="0" y="288.4" textLength="12.2" clip-path="url(#terminal-1887868792-line-11)">│</text><text class="terminal-1887868792-r3" x="24.4" y="288.4" textLength="134.2" clip-path="url(#terminal-1887868792-line-11)">sample&#160;SD&#160;&#160;</text><text class="terminal-1887868792-r2" x="170.8" y="288.4" textLength="12.2" clip-path="url(#terminal-1887868792-line-11)">│</text><text class="terminal-1887868792-r2" x="195.2" y="288.4" textLength="97.6" clip-path="url(#terminal-1887868792-line-11)">&#160;&#160;201.01</text><text class="terminal-1887868792-r2" x="305" y="288.4" textLength="12.2" clip-path="url(#terminal-1887868792-line-11)">│</text><text class="terminal-1887868792-r2" x="329.4" y="288.4" textLength="109.8" clip-path="url(#terminal-1887868792-line-11)">&#160;&#160;&#160;&#160;83.32</text><text class="terminal-1887868792-r2" x="451.4" y="288.4" textLength="12.2" clip-path="url(#terminal-1887868792-line-11)">│</text><text class="terminal-1887868792-r2" x="1268.8" y="288.4" textLength="12.2" clip-path="url(#terminal-1887868792-line-11)">
-</text><text class="terminal-1887868792-r2" x="0" y="312.8" textLength="12.2" clip-path="url(#terminal-1887868792-line-12)">│</text><text class="terminal-1887868792-r3" x="24.4" y="312.8" textLength="134.2" clip-path="url(#terminal-1887868792-line-12)">CV&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;</text><text class="terminal-1887868792-r2" x="170.8" y="312.8" textLength="12.2" clip-path="url(#terminal-1887868792-line-12)">│</text><text class="terminal-1887868792-r2" x="195.2" y="312.8" textLength="97.6" clip-path="url(#terminal-1887868792-line-12)">&#160;&#160;&#160;8.93%</text><text class="terminal-1887868792-r2" x="305" y="312.8" textLength="12.2" clip-path="url(#terminal-1887868792-line-12)">│</text><text class="terminal-1887868792-r2" x="329.4" y="312.8" textLength="109.8" clip-path="url(#terminal-1887868792-line-12)">&#160;&#160;&#160;&#160;3.86%</text><text class="terminal-1887868792-r2" x="451.4" y="312.8" textLength="12.2" clip-path="url(#terminal-1887868792-line-12)">│</text><text class="terminal-1887868792-r2" x="1268.8" y="312.8" textLength="12.2" clip-path="url(#terminal-1887868792-line-12)">
-</text><text class="terminal-1887868792-r2" x="0" y="337.2" textLength="12.2" clip-path="url(#terminal-1887868792-line-13)">│</text><text class="terminal-1887868792-r3" x="24.4" y="337.2" textLength="134.2" clip-path="url(#terminal-1887868792-line-13)">min&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;</text><text class="terminal-1887868792-r2" x="170.8" y="337.2" textLength="12.2" clip-path="url(#terminal-1887868792-line-13)">│</text><text class="terminal-1887868792-r2" x="195.2" y="337.2" textLength="97.6" clip-path="url(#terminal-1887868792-line-13)">&#160;2103.15</text><text class="terminal-1887868792-r2" x="305" y="337.2" textLength="12.2" clip-path="url(#terminal-1887868792-line-13)">│</text><text class="terminal-1887868792-r2" x="329.4" y="337.2" textLength="109.8" clip-path="url(#terminal-1887868792-line-13)">&#160;&#160;2069.23</text><text class="terminal-1887868792-r2" x="451.4" y="337.2" textLength="12.2" clip-path="url(#terminal-1887868792-line-13)">│</text><text class="terminal-1887868792-r2" x="1268.8" y="337.2" textLength="12.2" clip-path="url(#terminal-1887868792-line-13)">
-</text><text class="terminal-1887868792-r2" x="0" y="361.6" textLength="12.2" clip-path="url(#terminal-1887868792-line-14)">│</text><text class="terminal-1887868792-r3" x="24.4" y="361.6" textLength="134.2" clip-path="url(#terminal-1887868792-line-14)">max&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;</text><text class="terminal-1887868792-r2" x="170.8" y="361.6" textLength="12.2" clip-path="url(#terminal-1887868792-line-14)">│</text><text class="terminal-1887868792-r2" x="195.2" y="361.6" textLength="97.6" clip-path="url(#terminal-1887868792-line-14)">&#160;2649.71</text><text class="terminal-1887868792-r2" x="305" y="361.6" textLength="12.2" clip-path="url(#terminal-1887868792-line-14)">│</text><text class="terminal-1887868792-r2" x="329.4" y="361.6" textLength="109.8" clip-path="url(#terminal-1887868792-line-14)">&#160;&#160;2285.23</text><text class="terminal-1887868792-r2" x="451.4" y="361.6" textLength="12.2" clip-path="url(#terminal-1887868792-line-14)">│</text><text class="terminal-1887868792-r2" x="1268.8" y="361.6" textLength="12.2" clip-path="url(#terminal-1887868792-line-14)">
-</text><text class="terminal-1887868792-r2" x="0" y="386" textLength="463.6" clip-path="url(#terminal-1887868792-line-15)">└─────────────┴──────────┴───────────┘</text><text class="terminal-1887868792-r2" x="1268.8" y="386" textLength="12.2" clip-path="url(#terminal-1887868792-line-15)">
-</text><text class="terminal-1887868792-r2" x="0" y="410.4" textLength="85.4" clip-path="url(#terminal-1887868792-line-16)">Delta:&#160;</text><text class="terminal-1887868792-r5" x="85.4" y="410.4" textLength="61" clip-path="url(#terminal-1887868792-line-16)">-4.19</text><text class="terminal-1887868792-r2" x="146.4" y="410.4" textLength="231.8" clip-path="url(#terminal-1887868792-line-16)">%&#160;&#160;|&#160;&#160;Regression:&#160;+</text><text class="terminal-1887868792-r5" x="378.2" y="410.4" textLength="48.8" clip-path="url(#terminal-1887868792-line-16)">4.19</text><text class="terminal-1887868792-r2" x="427" y="410.4" textLength="24.4" clip-path="url(#terminal-1887868792-line-16)">%&#160;</text><text class="terminal-1887868792-r3" x="451.4" y="410.4" textLength="12.2" clip-path="url(#terminal-1887868792-line-16)">(</text><text class="terminal-1887868792-r2" x="463.6" y="410.4" textLength="207.4" clip-path="url(#terminal-1887868792-line-16)">positive&#160;is&#160;worse</text><text class="terminal-1887868792-r3" x="671" y="410.4" textLength="12.2" clip-path="url(#terminal-1887868792-line-16)">)</text><text class="terminal-1887868792-r2" x="1268.8" y="410.4" textLength="12.2" clip-path="url(#terminal-1887868792-line-16)">
-</text><text class="terminal-1887868792-r5" x="0" y="434.8" textLength="24.4" clip-path="url(#terminal-1887868792-line-17)">90</text><text class="terminal-1887868792-r2" x="24.4" y="434.8" textLength="512.4" clip-path="url(#terminal-1887868792-line-17)">%&#160;confidence&#160;interval&#160;for&#160;the&#160;regression:&#160;</text><text class="terminal-1887868792-r5" x="536.8" y="434.8" textLength="61" clip-path="url(#terminal-1887868792-line-17)">-3.33</text><text class="terminal-1887868792-r2" x="597.8" y="434.8" textLength="73.2" clip-path="url(#terminal-1887868792-line-17)">%&#160;to&#160;+</text><text class="terminal-1887868792-r5" x="671" y="434.8" textLength="61" clip-path="url(#terminal-1887868792-line-17)">11.17</text><text class="terminal-1887868792-r2" x="732" y="434.8" textLength="12.2" clip-path="url(#terminal-1887868792-line-17)">%</text><text class="terminal-1887868792-r2" x="1268.8" y="434.8" textLength="12.2" clip-path="url(#terminal-1887868792-line-17)">
-</text><text class="terminal-1887868792-r2" x="0" y="459.2" textLength="268.4" clip-path="url(#terminal-1887868792-line-18)">Regression&#160;threshold:&#160;</text><text class="terminal-1887868792-r5" x="268.4" y="459.2" textLength="24.4" clip-path="url(#terminal-1887868792-line-18)">10</text><text class="terminal-1887868792-r2" x="292.8" y="459.2" textLength="329.4" clip-path="url(#terminal-1887868792-line-18)">%&#160;&#160;|&#160;&#160;Minimum&#160;repetitions:&#160;</text><text class="terminal-1887868792-r5" x="622.2" y="459.2" textLength="12.2" clip-path="url(#terminal-1887868792-line-18)">3</text><text class="terminal-1887868792-r2" x="1268.8" y="459.2" textLength="12.2" clip-path="url(#terminal-1887868792-line-18)">
-</text><text class="terminal-1887868792-r2" x="0" y="483.6" textLength="48.8" clip-path="url(#terminal-1887868792-line-19)">Why:</text><text class="terminal-1887868792-r2" x="1268.8" y="483.6" textLength="12.2" clip-path="url(#terminal-1887868792-line-19)">
-</text><text class="terminal-1887868792-r2" x="0" y="508" textLength="73.2" clip-path="url(#terminal-1887868792-line-20)">-&#160;the&#160;</text><text class="terminal-1887868792-r5" x="73.2" y="508" textLength="24.4" clip-path="url(#terminal-1887868792-line-20)">90</text><text class="terminal-1887868792-r2" x="97.6" y="508" textLength="512.4" clip-path="url(#terminal-1887868792-line-20)">%&#160;confidence&#160;interval&#160;for&#160;the&#160;regression,&#160;</text><text class="terminal-1887868792-r5" x="610" y="508" textLength="61" clip-path="url(#terminal-1887868792-line-20)">-3.33</text><text class="terminal-1887868792-r2" x="671" y="508" textLength="73.2" clip-path="url(#terminal-1887868792-line-20)">%&#160;to&#160;+</text><text class="terminal-1887868792-r5" x="744.2" y="508" textLength="61" clip-path="url(#terminal-1887868792-line-20)">11.17</text><text class="terminal-1887868792-r2" x="805.2" y="508" textLength="195.2" clip-path="url(#terminal-1887868792-line-20)">%,&#160;includes&#160;the&#160;</text><text class="terminal-1887868792-r5" x="1000.4" y="508" textLength="24.4" clip-path="url(#terminal-1887868792-line-20)">10</text><text class="terminal-1887868792-r2" x="1024.8" y="508" textLength="219.6" clip-path="url(#terminal-1887868792-line-20)">%&#160;threshold;&#160;more&#160;</text><text class="terminal-1887868792-r2" x="1268.8" y="508" textLength="12.2" clip-path="url(#terminal-1887868792-line-20)">
-</text><text class="terminal-1887868792-r2" x="0" y="532.4" textLength="329.4" clip-path="url(#terminal-1887868792-line-21)">repetitions&#160;would&#160;narrow&#160;it</text><text class="terminal-1887868792-r2" x="1268.8" y="532.4" textLength="12.2" clip-path="url(#terminal-1887868792-line-21)">
-</text><text class="terminal-1887868792-r2" x="0" y="556.8" textLength="841.8" clip-path="url(#terminal-1887868792-line-22)">Outlier&#160;flags&#160;are&#160;descriptive&#160;only;&#160;all&#160;observations&#160;remain&#160;included.</text><text class="terminal-1887868792-r2" x="1268.8" y="556.8" textLength="12.2" clip-path="url(#terminal-1887868792-line-22)">
-</text><text class="terminal-1887868792-r2" x="0" y="581.2" textLength="402.6" clip-path="url(#terminal-1887868792-line-23)">No&#160;merge&#160;recommendation&#160;was&#160;made.</text><text class="terminal-1887868792-r2" x="1268.8" y="581.2" textLength="12.2" clip-path="url(#terminal-1887868792-line-23)">
+    <g class="terminal-686803829-matrix">
+    <text class="terminal-686803829-r1" x="0" y="20" textLength="12.2" clip-path="url(#terminal-686803829-line-0)">$</text><text class="terminal-686803829-r2" x="12.2" y="20" textLength="1220" clip-path="url(#terminal-686803829-line-0)">&#160;inference-doctor&#160;compare-runs&#160;--baseline&#160;baseline/&#160;--candidate&#160;candidate/&#160;--metric&#160;texts_per_second</text><text class="terminal-686803829-r2" x="1268.8" y="20" textLength="12.2" clip-path="url(#terminal-686803829-line-0)">
+</text><text class="terminal-686803829-r3" x="0" y="44.4" textLength="146.4" clip-path="url(#terminal-686803829-line-1)">INFERENCE&#160;CI</text><text class="terminal-686803829-r2" x="1268.8" y="44.4" textLength="12.2" clip-path="url(#terminal-686803829-line-1)">
+</text><text class="terminal-686803829-r2" x="0" y="68.8" textLength="97.6" clip-path="url(#terminal-686803829-line-2)">RESULT:&#160;</text><text class="terminal-686803829-r4" x="97.6" y="68.8" textLength="146.4" clip-path="url(#terminal-686803829-line-2)">INCONCLUSIVE</text><text class="terminal-686803829-r2" x="1268.8" y="68.8" textLength="12.2" clip-path="url(#terminal-686803829-line-2)">
+</text><text class="terminal-686803829-r2" x="0" y="93.2" textLength="305" clip-path="url(#terminal-686803829-line-3)">Metric:&#160;Texts&#160;per&#160;second&#160;</text><text class="terminal-686803829-r3" x="305" y="93.2" textLength="12.2" clip-path="url(#terminal-686803829-line-3)">(</text><text class="terminal-686803829-r2" x="317.2" y="93.2" textLength="414.8" clip-path="url(#terminal-686803829-line-3)">texts_per_second,&#160;higher&#160;is&#160;better</text><text class="terminal-686803829-r3" x="732" y="93.2" textLength="12.2" clip-path="url(#terminal-686803829-line-3)">)</text><text class="terminal-686803829-r2" x="1268.8" y="93.2" textLength="12.2" clip-path="url(#terminal-686803829-line-3)">
+</text><text class="terminal-686803829-r2" x="0" y="117.6" textLength="305" clip-path="url(#terminal-686803829-line-4)">Input:&#160;normalized&#160;results</text><text class="terminal-686803829-r2" x="1268.8" y="117.6" textLength="12.2" clip-path="url(#terminal-686803829-line-4)">
+</text><text class="terminal-686803829-r2" x="1268.8" y="142" textLength="12.2" clip-path="url(#terminal-686803829-line-5)">
+</text><text class="terminal-686803829-r3" x="195.2" y="166.4" textLength="97.6" clip-path="url(#terminal-686803829-line-6)">Baseline</text><text class="terminal-686803829-r3" x="329.4" y="166.4" textLength="109.8" clip-path="url(#terminal-686803829-line-6)">Candidate</text><text class="terminal-686803829-r2" x="1268.8" y="166.4" textLength="12.2" clip-path="url(#terminal-686803829-line-6)">
+</text><text class="terminal-686803829-r2" x="0" y="190.8" textLength="463.6" clip-path="url(#terminal-686803829-line-7)">&#160;────────────────────────────────────&#160;</text><text class="terminal-686803829-r2" x="1268.8" y="190.8" textLength="12.2" clip-path="url(#terminal-686803829-line-7)">
+</text><text class="terminal-686803829-r3" x="24.4" y="215.2" textLength="134.2" clip-path="url(#terminal-686803829-line-8)">repetitions</text><text class="terminal-686803829-r2" x="195.2" y="215.2" textLength="97.6" clip-path="url(#terminal-686803829-line-8)">&#160;&#160;&#160;&#160;&#160;&#160;&#160;6</text><text class="terminal-686803829-r2" x="329.4" y="215.2" textLength="109.8" clip-path="url(#terminal-686803829-line-8)">&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;6</text><text class="terminal-686803829-r2" x="1268.8" y="215.2" textLength="12.2" clip-path="url(#terminal-686803829-line-8)">
+</text><text class="terminal-686803829-r3" x="24.4" y="239.6" textLength="134.2" clip-path="url(#terminal-686803829-line-9)">mean&#160;&#160;&#160;&#160;&#160;&#160;&#160;</text><text class="terminal-686803829-r2" x="195.2" y="239.6" textLength="97.6" clip-path="url(#terminal-686803829-line-9)">&#160;2251.22</text><text class="terminal-686803829-r2" x="329.4" y="239.6" textLength="109.8" clip-path="url(#terminal-686803829-line-9)">&#160;&#160;2156.78</text><text class="terminal-686803829-r2" x="1268.8" y="239.6" textLength="12.2" clip-path="url(#terminal-686803829-line-9)">
+</text><text class="terminal-686803829-r3" x="24.4" y="264" textLength="134.2" clip-path="url(#terminal-686803829-line-10)">median&#160;&#160;&#160;&#160;&#160;</text><text class="terminal-686803829-r2" x="195.2" y="264" textLength="97.6" clip-path="url(#terminal-686803829-line-10)">&#160;2173.17</text><text class="terminal-686803829-r2" x="329.4" y="264" textLength="109.8" clip-path="url(#terminal-686803829-line-10)">&#160;&#160;2142.29</text><text class="terminal-686803829-r2" x="1268.8" y="264" textLength="12.2" clip-path="url(#terminal-686803829-line-10)">
+</text><text class="terminal-686803829-r3" x="24.4" y="288.4" textLength="134.2" clip-path="url(#terminal-686803829-line-11)">sample&#160;SD&#160;&#160;</text><text class="terminal-686803829-r2" x="195.2" y="288.4" textLength="97.6" clip-path="url(#terminal-686803829-line-11)">&#160;&#160;201.01</text><text class="terminal-686803829-r2" x="329.4" y="288.4" textLength="109.8" clip-path="url(#terminal-686803829-line-11)">&#160;&#160;&#160;&#160;83.32</text><text class="terminal-686803829-r2" x="1268.8" y="288.4" textLength="12.2" clip-path="url(#terminal-686803829-line-11)">
+</text><text class="terminal-686803829-r3" x="24.4" y="312.8" textLength="134.2" clip-path="url(#terminal-686803829-line-12)">CV&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;</text><text class="terminal-686803829-r2" x="195.2" y="312.8" textLength="97.6" clip-path="url(#terminal-686803829-line-12)">&#160;&#160;&#160;8.93%</text><text class="terminal-686803829-r2" x="329.4" y="312.8" textLength="109.8" clip-path="url(#terminal-686803829-line-12)">&#160;&#160;&#160;&#160;3.86%</text><text class="terminal-686803829-r2" x="1268.8" y="312.8" textLength="12.2" clip-path="url(#terminal-686803829-line-12)">
+</text><text class="terminal-686803829-r3" x="24.4" y="337.2" textLength="134.2" clip-path="url(#terminal-686803829-line-13)">min&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;</text><text class="terminal-686803829-r2" x="195.2" y="337.2" textLength="97.6" clip-path="url(#terminal-686803829-line-13)">&#160;2103.15</text><text class="terminal-686803829-r2" x="329.4" y="337.2" textLength="109.8" clip-path="url(#terminal-686803829-line-13)">&#160;&#160;2069.23</text><text class="terminal-686803829-r2" x="1268.8" y="337.2" textLength="12.2" clip-path="url(#terminal-686803829-line-13)">
+</text><text class="terminal-686803829-r3" x="24.4" y="361.6" textLength="134.2" clip-path="url(#terminal-686803829-line-14)">max&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;</text><text class="terminal-686803829-r2" x="195.2" y="361.6" textLength="97.6" clip-path="url(#terminal-686803829-line-14)">&#160;2649.71</text><text class="terminal-686803829-r2" x="329.4" y="361.6" textLength="109.8" clip-path="url(#terminal-686803829-line-14)">&#160;&#160;2285.23</text><text class="terminal-686803829-r2" x="1268.8" y="361.6" textLength="12.2" clip-path="url(#terminal-686803829-line-14)">
+</text><text class="terminal-686803829-r2" x="1268.8" y="386" textLength="12.2" clip-path="url(#terminal-686803829-line-15)">
+</text><text class="terminal-686803829-r2" x="0" y="410.4" textLength="85.4" clip-path="url(#terminal-686803829-line-16)">Delta:&#160;</text><text class="terminal-686803829-r5" x="85.4" y="410.4" textLength="61" clip-path="url(#terminal-686803829-line-16)">-4.19</text><text class="terminal-686803829-r2" x="146.4" y="410.4" textLength="231.8" clip-path="url(#terminal-686803829-line-16)">%&#160;&#160;|&#160;&#160;Regression:&#160;+</text><text class="terminal-686803829-r5" x="378.2" y="410.4" textLength="48.8" clip-path="url(#terminal-686803829-line-16)">4.19</text><text class="terminal-686803829-r2" x="427" y="410.4" textLength="24.4" clip-path="url(#terminal-686803829-line-16)">%&#160;</text><text class="terminal-686803829-r3" x="451.4" y="410.4" textLength="12.2" clip-path="url(#terminal-686803829-line-16)">(</text><text class="terminal-686803829-r2" x="463.6" y="410.4" textLength="207.4" clip-path="url(#terminal-686803829-line-16)">positive&#160;is&#160;worse</text><text class="terminal-686803829-r3" x="671" y="410.4" textLength="12.2" clip-path="url(#terminal-686803829-line-16)">)</text><text class="terminal-686803829-r2" x="1268.8" y="410.4" textLength="12.2" clip-path="url(#terminal-686803829-line-16)">
+</text><text class="terminal-686803829-r5" x="0" y="434.8" textLength="24.4" clip-path="url(#terminal-686803829-line-17)">90</text><text class="terminal-686803829-r2" x="24.4" y="434.8" textLength="512.4" clip-path="url(#terminal-686803829-line-17)">%&#160;confidence&#160;interval&#160;for&#160;the&#160;regression:&#160;</text><text class="terminal-686803829-r5" x="536.8" y="434.8" textLength="61" clip-path="url(#terminal-686803829-line-17)">-3.33</text><text class="terminal-686803829-r2" x="597.8" y="434.8" textLength="73.2" clip-path="url(#terminal-686803829-line-17)">%&#160;to&#160;+</text><text class="terminal-686803829-r5" x="671" y="434.8" textLength="61" clip-path="url(#terminal-686803829-line-17)">11.17</text><text class="terminal-686803829-r2" x="732" y="434.8" textLength="12.2" clip-path="url(#terminal-686803829-line-17)">%</text><text class="terminal-686803829-r2" x="1268.8" y="434.8" textLength="12.2" clip-path="url(#terminal-686803829-line-17)">
+</text><text class="terminal-686803829-r2" x="0" y="459.2" textLength="268.4" clip-path="url(#terminal-686803829-line-18)">Regression&#160;threshold:&#160;</text><text class="terminal-686803829-r5" x="268.4" y="459.2" textLength="24.4" clip-path="url(#terminal-686803829-line-18)">10</text><text class="terminal-686803829-r2" x="292.8" y="459.2" textLength="329.4" clip-path="url(#terminal-686803829-line-18)">%&#160;&#160;|&#160;&#160;Minimum&#160;repetitions:&#160;</text><text class="terminal-686803829-r5" x="622.2" y="459.2" textLength="12.2" clip-path="url(#terminal-686803829-line-18)">3</text><text class="terminal-686803829-r2" x="1268.8" y="459.2" textLength="12.2" clip-path="url(#terminal-686803829-line-18)">
+</text><text class="terminal-686803829-r2" x="0" y="483.6" textLength="48.8" clip-path="url(#terminal-686803829-line-19)">Why:</text><text class="terminal-686803829-r2" x="1268.8" y="483.6" textLength="12.2" clip-path="url(#terminal-686803829-line-19)">
+</text><text class="terminal-686803829-r2" x="0" y="508" textLength="73.2" clip-path="url(#terminal-686803829-line-20)">-&#160;the&#160;</text><text class="terminal-686803829-r5" x="73.2" y="508" textLength="24.4" clip-path="url(#terminal-686803829-line-20)">90</text><text class="terminal-686803829-r2" x="97.6" y="508" textLength="512.4" clip-path="url(#terminal-686803829-line-20)">%&#160;confidence&#160;interval&#160;for&#160;the&#160;regression,&#160;</text><text class="terminal-686803829-r5" x="610" y="508" textLength="61" clip-path="url(#terminal-686803829-line-20)">-3.33</text><text class="terminal-686803829-r2" x="671" y="508" textLength="73.2" clip-path="url(#terminal-686803829-line-20)">%&#160;to&#160;+</text><text class="terminal-686803829-r5" x="744.2" y="508" textLength="61" clip-path="url(#terminal-686803829-line-20)">11.17</text><text class="terminal-686803829-r2" x="805.2" y="508" textLength="195.2" clip-path="url(#terminal-686803829-line-20)">%,&#160;includes&#160;the&#160;</text><text class="terminal-686803829-r5" x="1000.4" y="508" textLength="24.4" clip-path="url(#terminal-686803829-line-20)">10</text><text class="terminal-686803829-r2" x="1024.8" y="508" textLength="219.6" clip-path="url(#terminal-686803829-line-20)">%&#160;threshold;&#160;more&#160;</text><text class="terminal-686803829-r2" x="1268.8" y="508" textLength="12.2" clip-path="url(#terminal-686803829-line-20)">
+</text><text class="terminal-686803829-r2" x="0" y="532.4" textLength="329.4" clip-path="url(#terminal-686803829-line-21)">repetitions&#160;would&#160;narrow&#160;it</text><text class="terminal-686803829-r2" x="1268.8" y="532.4" textLength="12.2" clip-path="url(#terminal-686803829-line-21)">
+</text><text class="terminal-686803829-r2" x="0" y="556.8" textLength="841.8" clip-path="url(#terminal-686803829-line-22)">Outlier&#160;flags&#160;are&#160;descriptive&#160;only;&#160;all&#160;observations&#160;remain&#160;included.</text><text class="terminal-686803829-r2" x="1268.8" y="556.8" textLength="12.2" clip-path="url(#terminal-686803829-line-22)">
+</text><text class="terminal-686803829-r2" x="0" y="581.2" textLength="402.6" clip-path="url(#terminal-686803829-line-23)">No&#160;merge&#160;recommendation&#160;was&#160;made.</text><text class="terminal-686803829-r2" x="1268.8" y="581.2" textLength="12.2" clip-path="url(#terminal-686803829-line-23)">
 </text>
     </g>
     </g>

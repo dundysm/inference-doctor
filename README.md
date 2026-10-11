@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/dundysm/inference-doctor/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dundysm/inference-doctor/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776ab">
-  <img alt="Reads vLLM, AIPerf, GuideLLM and SGLang" src="https://img.shields.io/badge/reads-vLLM%20%C2%B7%20AIPerf%20%C2%B7%20GuideLLM%20%C2%B7%20SGLang-1f6feb">
+  <img alt="Reads vLLM, AIPerf, GuideLLM and SGLang" src="https://img.shields.io/badge/reads-vLLM%2C%20AIPerf%2C%20GuideLLM%2C%20SGLang-1f6feb">
   <a href="https://github.com/dundysm/inference-doctor/blob/main/LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-2ea043"></a>
   <a href="https://github.com/dundysm/inference-doctor/blob/main/STATUS.md"><img alt="Status: early" src="https://img.shields.io/badge/status-early-d29922"></a>
   <a href="https://github.com/dundysm/inference-doctor/blob/main/CONTRIBUTING.md"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-2ea043"></a>

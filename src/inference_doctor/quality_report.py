@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from rich import box
 from rich.console import Console
 from rich.table import Table
 
@@ -25,7 +26,7 @@ def render_quality_report(report: dict, console: Console | None = None) -> None:
         formats = {source["baseline"]["format"], source["candidate"]["format"]}
         console.print(f"Input: {' / '.join(sorted(formats))} results")
 
-    table = Table(show_lines=False)
+    table = Table(box=box.SIMPLE_HEAD, show_lines=False)
     table.add_column("", style="bold")
     table.add_column("Baseline", justify="right")
     table.add_column("Candidate", justify="right")
