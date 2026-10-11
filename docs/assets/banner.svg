@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="200" viewBox="0 0 900 200" role="img" aria-labelledby="t d">
+  <title id="t">inference-doctor</title>
+  <desc id="d">Repeated baseline and candidate benchmark runs appear as dots, a confidence interval forms around the change, and a verdict appears. Tagline: did this change make inference slower, and can your benchmark tell?</desc>
+  <style>
+    :root { --bg: #ffffff; --fg: #1f2328; --muted: #59636e; --base: #8c959f; --cand: #0969da; --ok: #1a7f37; --line: #d1d9e0; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #0d1117; --fg: #e6edf3; --muted: #9198a1; --base: #6e7681; --cand: #4493f8; --ok: #3fb950; --line: #3d444d; }
+    }
+    .bg { fill: var(--bg); }
+    .name { font: 700 50px ui-sans-serif, -apple-system, "Segoe UI", Inter, Helvetica, Arial, sans-serif; fill: var(--fg); letter-spacing: -1px; }
+    .tag { font: 400 17px ui-sans-serif, -apple-system, "Segoe UI", Inter, Helvetica, Arial, sans-serif; fill: var(--muted); }
+    .small { font: 600 11px ui-sans-serif, -apple-system, "Segoe UI", Inter, Helvetica, Arial, sans-serif; fill: var(--muted); letter-spacing: 0.8px; }
+    .axis { stroke: var(--line); stroke-width: 2; stroke-dasharray: 4 6; }
+    .base { fill: var(--base); opacity: 0; animation: dot 8s infinite; }
+    .cand { fill: var(--cand); opacity: 0; animation: dot 8s infinite; }
+    .ci { stroke: var(--cand); stroke-width: 4; stroke-linecap: round; opacity: 0; transform-origin: 656px 158px; animation: ci 8s infinite; }
+    .cap { stroke: var(--cand); stroke-width: 3; opacity: 0; animation: fade 8s infinite; }
+    .thr { stroke: var(--muted); stroke-width: 2; stroke-dasharray: 5 4; }
+    .pill { fill: var(--ok); opacity: 0; animation: fade 8s infinite; }
+    .pilltext { font: 700 13px ui-sans-serif, -apple-system, "Segoe UI", Inter, Helvetica, Arial, sans-serif; fill: #ffffff; opacity: 0; animation: fade 8s infinite; }
+    @keyframes dot { 0% { opacity: 0; transform: translateY(-6px); } 5% { opacity: 1; transform: translateY(0); } 85% { opacity: 1; } 95%, 100% { opacity: 0; } }
+    @keyframes ci { 0%, 40% { opacity: 0; transform: scaleX(0.05); } 52% { opacity: 1; transform: scaleX(1); } 85% { opacity: 1; } 95%, 100% { opacity: 0; } }
+    @keyframes fade { 0%, 52% { opacity: 0; } 58% { opacity: 1; } 85% { opacity: 1; } 95%, 100% { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .base, .cand, .ci, .cap, .pill, .pilltext { animation: none; opacity: 1; }
+    }
+    .logo-frame { stroke: var(--fg); stroke-width: 3.5; }
+    .logo-ci { stroke: var(--cand); stroke-width: 4; }
+    .logo-thr { stroke: var(--ok); stroke-width: 3; stroke-dasharray: 4 3.5; }
+    .logo-dot { fill: var(--bg); stroke: var(--cand); stroke-width: 3; }
+  </style>
+  <rect class="bg" width="900" height="200" rx="12"/>
+  <!-- the logo: a confidence interval clear of a threshold, inside a frame -->
+  <g transform="translate(30 30)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <rect class="logo-frame" x="2" y="2" width="56" height="56" rx="13"/>
+    <path class="logo-thr" d="M42 12v36"/>
+    <path class="logo-ci" d="M13 30h21M13 23v14M34 23v14"/>
+    <circle class="logo-dot" cx="23.5" cy="30" r="4"/>
+  </g>
+  <text class="name" x="106" y="78">inference-doctor</text>
+  <text class="tag" x="32" y="118">Did this change make LLM inference slower, and can your benchmark actually tell?</text>
+
+  <line class="axis" x1="32" y1="172" x2="868" y2="172"/>
+  <text class="small" x="32" y="152">BASELINE RUNS</text>
+  <text class="small" x="300" y="152">CANDIDATE RUNS</text>
+  <g>
+    <circle class="base" cx="54"  cy="172" r="7" style="animation-delay:0.0s"/>
+    <circle class="base" cx="96"  cy="172" r="7" style="animation-delay:0.25s"/>
+    <circle class="base" cx="138" cy="172" r="7" style="animation-delay:0.5s"/>
+    <circle class="base" cx="180" cy="172" r="7" style="animation-delay:0.75s"/>
+    <circle class="base" cx="222" cy="172" r="7" style="animation-delay:1.0s"/>
+    <circle class="cand" cx="322" cy="172" r="7" style="animation-delay:1.25s"/>
+    <circle class="cand" cx="364" cy="172" r="7" style="animation-delay:1.5s"/>
+    <circle class="cand" cx="406" cy="172" r="7" style="animation-delay:1.75s"/>
+    <circle class="cand" cx="448" cy="172" r="7" style="animation-delay:2.0s"/>
+    <circle class="cand" cx="490" cy="172" r="7" style="animation-delay:2.25s"/>
+  </g>
+  <!-- the interval for the regression, clear of the threshold -->
+  <text class="small" x="610" y="138">90% INTERVAL</text>
+  <line class="thr" x1="736" y1="132" x2="736" y2="184"/>
+  <text class="small" x="742" y="190">10%</text>
+  <line class="ci" x1="614" y1="158" x2="698" y2="158"/>
+  <line class="cap" x1="614" y1="150" x2="614" y2="166"/>
+  <line class="cap" x1="698" y1="150" x2="698" y2="166"/>
+  <rect class="pill" x="780" y="144" width="72" height="28" rx="14"/>
+  <text class="pilltext" x="816" y="163" text-anchor="middle">PASS</text>
+</svg>

@@ -1,162 +1,178 @@
-# Inference Doctor
+<p align="center">
+  <img src="https://raw.githubusercontent.com/dundysm/inference-doctor/main/docs/assets/banner.svg" alt="inference-doctor: did this change make LLM inference slower, and can your benchmark actually tell?" width="900">
+</p>
 
-[![CI](https://github.com/dundysm/inference-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/dundysm/inference-doctor/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+<p align="center">
+  <a href="https://github.com/dundysm/inference-doctor/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dundysm/inference-doctor/actions/workflows/ci.yml/badge.svg"></a>
+  <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776ab">
+  <img alt="Reads vLLM, AIPerf, GuideLLM and SGLang" src="https://img.shields.io/badge/reads-vLLM%20%C2%B7%20AIPerf%20%C2%B7%20GuideLLM%20%C2%B7%20SGLang-1f6feb">
+  <a href="https://github.com/dundysm/inference-doctor/blob/main/LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-2ea043"></a>
+  <a href="https://github.com/dundysm/inference-doctor/blob/main/STATUS.md"><img alt="Status: early" src="https://img.shields.io/badge/status-early-d29922"></a>
+  <a href="https://github.com/dundysm/inference-doctor/blob/main/CONTRIBUTING.md"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-2ea043"></a>
+</p>
 
-**Stop shipping inference regressions.**
+A pull request can pass every test and still make inference slower. Putting a benchmark
+in CI is the obvious fix, and it goes wrong in three ways:
 
-Inference Doctor is a CLI + GitHub Action that compares repeated LLM inference benchmarks and turns them into a merge-gate decision:
+* **false alarms**: GPU benchmarks are noisy, so a gate on two numbers fails changes that
+  did nothing, and the team turns it off,
+* **missed regressions**: with two or three runs, a real 12% slowdown can land inside the
+  noise and pass,
+* **apples to oranges**: the two sides ran on a different GPU, model or load, and the
+  difference is the setup, not the change.
 
-```text
-PASS          candidate is within your regression threshold
-FAIL          candidate has a measurable performance regression
-INCONCLUSIVE  the benchmark is too noisy or invalid to trust
-```
+inference-doctor compares repeated baseline and candidate runs and returns `PASS` or
+`FAIL` only when the data can support it. Otherwise it returns `INCONCLUSIVE` and says
+why. It reads the files `vllm bench serve`, AIPerf, GuideLLM and SGLang already write.
 
-The key difference from a simple benchmark threshold: **Inference Doctor checks whether the measurement itself is trustworthy before making a decision.**
+<p align="center">
+  <img src="https://raw.githubusercontent.com/dundysm/inference-doctor/main/docs/assets/terminal.svg" alt="Terminal output of inference-doctor compare-runs on a real H100 run: six runs per side, throughput 4.19% lower, 90% confidence interval for the regression -3.33% to +11.17%, which contains the 10% threshold, so the result is INCONCLUSIVE." width="860">
+  <br>
+  <sub>A real H100 run (<code>examples/inference-ci-reliability-001</code>), rendered from the CLI by
+  <code>tools/render_readme_media.py</code>. Throughput is 4.19% lower, but one noisy baseline block leaves an interval
+  from -3.33% to +11.17%. Six runs cannot rule out a 10% regression, so there is no merge recommendation.</sub>
+</p>
 
-## Who this is for
+## How it decides
 
-Use Inference Doctor if you maintain self-hosted inference and regularly change things like vLLM/PyTorch/CUDA versions, model revisions, batching, KV-cache settings, quantization, tensor parallelism, or serving configuration.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/dundysm/inference-doctor/main/docs/assets/decision.svg" alt="Three 90% confidence intervals for the regression against a 10% threshold: the quickstart, +1.08% to +2.92%, PASS; a real H100 run, -3.33% to +11.17%, INCONCLUSIVE; a regressed candidate, +13.13% to +14.87%, FAIL." width="900">
+</p>
 
-Your benchmark harness stays yours. Inference Doctor sits after it and answers: **did this change regress performance, and is the evidence trustworthy enough to decide?**
+1. **Is the comparison valid?** Same GPU, model and benchmark parameters on every run, no
+   failed requests, the metric present everywhere, and at least 3 runs per side. If not,
+   the result is `INCONCLUSIVE` and the reason names the check that failed.
+2. **How big is the change, and how sure are we?** A 90% confidence interval for the
+   regression (positive is worse), from a Welch t interval on the log ratio of means.
+3. **Verdict.** `FAIL` when the whole interval is at or past the threshold (default 10%),
+   `PASS` when the whole interval is below it, `INCONCLUSIVE` when it contains the
+   threshold. More runs narrow the interval.
 
-## 5-minute quickstart
+Outliers are flagged but never removed: a bad run widens the interval instead of being
+hidden. Details and references: [measurement quality](docs/measurement-quality.md).
 
-Python 3.11+ is required.
+## Quick start
+
+Python 3.11 or newer. No GPU: the example results are checked in.
 
 ```bash
 git clone https://github.com/dundysm/inference-doctor.git
 cd inference-doctor
-python -m venv .venv
-source .venv/bin/activate  # PowerShell: .venv\Scripts\Activate.ps1
-python -m pip install -e .
-```
+python -m pip install .
 
-Run the checked-in example. **No GPU is required** because the benchmark results are already included.
-
-```bash
 inference-doctor compare-runs \
   --baseline examples/quickstart/baseline \
   --candidate examples/quickstart/candidate \
   --metric texts_per_second
 ```
 
-You should get `PASS`. That is the core workflow: repeated baseline results + repeated candidate results -> `PASS`, `FAIL`, or `INCONCLUSIVE`.
+`PASS`: the candidate is 2% slower, and the interval, +1.08% to +2.92%, is well below 10%.
+Point `--candidate` at `examples/quickstart/regressed-candidate` to see a `FAIL`.
 
-Want to use your own benchmark output? Start with the [normalized benchmark format](docs/benchmark-format.md).
+## Use your benchmark's own output
 
-## Why this exists
-
-A PR can pass every functional test and still make inference slower. A naive performance gate compares two numbers, but GPU benchmarks can be noisy enough to create false regressions or false confidence.
-
-Inference Doctor checks that the comparison is valid, then puts a confidence interval around the change instead of comparing two means:
-
-- incomparable environments, failed requests, missing metrics or fewer than 3 repetitions per side make the result `INCONCLUSIVE`
-- `FAIL` when the whole 90% confidence interval for the regression is at or past the threshold (default 10%)
-- `PASS` when the whole interval is below the threshold
-- `INCONCLUSIVE` when the interval contains the threshold: the data cannot tell, and more repetitions would
-- apparent outliers are flagged but stay in the calculation, so a bad repetition widens the interval instead of being hidden
-
-From the checked-in examples:
-
-```text
-PASS          quickstart: -2.0%, 90% interval for the regression +1.08% to +2.92%
-FAIL          quickstart, regressed candidate: -14.0%, interval +13.13% to +14.87%
-INCONCLUSIVE  real H100 run: -4.19%, interval -3.33% to +11.17% (one noisy baseline block)
-```
-
-At the threshold itself each wrong verdict happens about 5% of the time; further from it, well under 1%. [Gate calibration](docs/gate-calibration.md) has the measured rates for 3, 5 and 10 repetitions. Use 5 or more per side.
-
-## GitHub Actions
-
-After your benchmark job produces repeated normalized results, use Inference Doctor as the merge gate:
-
-```yaml
-- name: Check inference performance
-  uses: dundysm/inference-doctor@main
-  with:
-    baseline: artifacts/baseline
-    candidate: artifacts/candidate
-    metric: output_token_throughput
-    regression-percent: "10"
-    min-repetitions: "5"
-```
-
-The Action writes a readable GitHub step summary and exposes the result, baseline/candidate means, delta, the confidence interval and CVs as outputs. `FAIL` and `INCONCLUSIVE` both fail the Action step so noisy evidence cannot silently approve a change.
-
-Inference Doctor intentionally **does not provision GPUs**. Run your preferred benchmark on your existing GPU/self-hosted runner, save normalized results, then let Inference Doctor make the measurement-quality + regression decision.
-
-See [GitHub Actions integration](docs/github-actions.md).
-
-## CLI
-
-### Compare repeated runs — recommended
+No converter needed. Put each side's runs in a directory and point `compare-runs` at it:
 
 ```bash
 inference-doctor compare-runs \
-  --baseline artifacts/baseline \
-  --candidate artifacts/candidate \
-  --metric output_token_throughput
+  --baseline results/main \
+  --candidate results/my-branch \
+  --metric ttft_p99_ms
 ```
 
-Supported metrics include output-token throughput, request throughput, texts/sec, TTFT, TPOT, successful requests, and failed requests.
+| Tool | What it reads |
+| --- | --- |
+| `vllm bench serve --save-result` | each result file, or each line with `--append-result` |
+| NVIDIA AIPerf / GenAI-Perf | each `profile_export_aiperf.json` |
+| GuideLLM | `benchmarks.json`, one load point of the sweep (`--guidellm-benchmark`) |
+| SGLang `bench_serving` | each line of its `.jsonl` output |
+| anything else | the small [normalized format](docs/benchmark-format.md) |
 
-| Result | Meaning | Exit code |
-| --- | --- | ---: |
-| `PASS` | Valid comparison; the whole confidence interval is below the threshold | 0 |
-| `FAIL` | Valid comparison; the whole confidence interval is at or past the threshold | 1 |
-| `INCONCLUSIVE` | The interval contains the threshold, or the comparison is not valid | 2 |
-| error | No decision: invalid arguments, schema or files, or an internal error | 3 |
+Metrics: output, total and request throughput, and TTFT, TPOT, ITL and end-to-end latency
+at mean, median, p95 and p99. Most tools do not record the GPU; pass `--gpu` to label it,
+or record it in the results (for vLLM, `--metadata gpu=...`). The
+[input formats](docs/input-formats.md) page lists every field read from each tool.
 
-Every command uses these codes: `compare` exits 2 for `UNSTABLE`, and `diagnose` exits 3 when Prometheus cannot be queried. `inference-doctor --version` prints the installed version.
+[`examples/vllm-bench-serve`](examples/vllm-bench-serve/README.md) is a small example in
+vLLM's format where throughput passes and mean TTFT fails.
 
-Use `--json` for machine-readable output. See [measurement quality](docs/measurement-quality.md) for the decision semantics and [benchmark format](docs/benchmark-format.md) for the input contract.
+## In GitHub Actions
 
-Options: `--regression-percent` (default 10), `--confidence` (default 0.90), `--min-repetitions` (default 3), and `--stability-cv-percent` for an optional CV ceiling.
+Run your benchmark on your own GPU runner, then gate on the results:
 
-The [sanitized H100 reliability example](examples/inference-ci-reliability-001/README.md) preserves a real experiment where the correct result is `INCONCLUSIVE`: one noisy baseline block leaves an interval too wide to rule out a 10% regression.
-
-### Compare two normalized files
-
-For a simple one-to-one comparison:
-
-```bash
-inference-doctor compare \
-  --baseline baseline.json \
-  --candidate candidate.json
+```yaml
+- name: Gate inference performance
+  uses: dundysm/inference-doctor@main
+  with:
+    baseline: results/main
+    candidate: results/my-branch
+    metric: output_token_throughput
+    min-repetitions: "5"
 ```
 
-See [upgrade guard](docs/upgrade-guard.md).
+The Action writes a job summary with the verdict, the interval and the reason, and exposes
+them as outputs. `FAIL`, `INCONCLUSIVE` and errors fail the step, so noisy evidence cannot
+approve a change. inference-doctor does not provision GPUs or run the benchmark. See
+[GitHub Actions](docs/github-actions.md).
 
-## Secondary feature: diagnose a live vLLM service
+## How much to trust it
 
-Inference Doctor also keeps its original read-only Prometheus diagnostic mode for queue/capacity pressure, decode pressure, and meaningful KV-cache pressure.
+Simulated with known truth, at default settings, from
+[gate calibration](docs/gate-calibration.md) (4,000 trials per row):
 
-```bash
-inference-doctor diagnose \
-  --prometheus http://localhost:9090 \
-  --ttft-slo-ms 400 \
-  --tpot-slo-ms 50
-```
+| Runs per side, noise (CV) | No change | True 5% drop | True 15% drop | True 20% drop |
+| --- | --- | --- | --- | --- |
+| 3 runs, 4% | 78% PASS, 0% FAIL | 34% PASS, 0.1% FAIL | 0% PASS, 37% FAIL | 0% PASS, 85% FAIL |
+| 5 runs, 4% | 98% PASS, 0% FAIL | 60% PASS, 0% FAIL | 0% PASS, 65% FAIL | 0% PASS, 99% FAIL |
+| 10 runs, 4% | 100% PASS, 0% FAIL | 90% PASS, 0% FAIL | 0% PASS, 92% FAIL | 0% PASS, 100% FAIL |
 
-It reads Prometheus only and does not modify vLLM, Prometheus, or traffic. High GPU/KV utilization alone is not treated as an incident; findings require corroborating evidence.
+The rest of each row is `INCONCLUSIVE`. Right at the 10% threshold, each wrong verdict
+happens about 5% of the time; further from it, at most 0.5%. Noise costs decisions, not
+correctness. Use 5 or more runs per side. These rates assume independent, roughly normal
+runs; [interleave baseline and candidate runs](docs/measurement-quality.md#assumptions)
+to stay close to that.
 
-See [example reports](docs/example-reports.md) and [local integration](docs/local-integration.md).
+## Commands
 
-## Try it on a real change
+| Command | What it does |
+| --- | --- |
+| `compare-runs` | The gate: repeated baseline and candidate runs, one metric, `PASS`, `FAIL` or `INCONCLUSIVE`. |
+| `compare` | One normalized file against another, every metric, `PASS`, `WARN`, `FAIL` or `UNSTABLE`. A single run per side cannot measure noise; prefer `compare-runs`. See [upgrade guard](docs/upgrade-guard.md). |
+| `diagnose` | Experimental. Reads a live vLLM server's Prometheus metrics and reports queue, decode and KV-cache pressure. Read-only. See [example reports](docs/example-reports.md). |
 
-The project is at the stage where real-world feedback matters more than more features. If you run Inference Doctor on an actual inference change, open a **Benchmark feedback** issue and tell us what worked, what was confusing, and whether you would put the gate in CI.
+`compare-runs` options: `--metric`, `--regression-percent` (10), `--confidence` (0.90),
+`--min-repetitions` (3), `--stability-cv-percent` (an optional CV ceiling, off),
+`--format` (auto), `--gpu`, `--model`, `--guidellm-benchmark` and `--json`.
 
-Please redact prompts, credentials, private model names, customer data, and cloud access details.
+**Exit codes**, the same for every command: `0` PASS, `1` FAIL, `2` INCONCLUSIVE (or
+UNSTABLE for `compare`), `3` error with no decision (bad arguments or input, an
+unreachable Prometheus, or an internal error). `inference-doctor --version` prints the
+version.
 
-## Scope
+## What has been measured
 
-> **Unit tests protect correctness. Inference Doctor protects inference performance.**
+* **The decision rule**: the calibration table above, regenerated by
+  `tools/gate_simulation.py` and checked by `tests/test_gate.py` on every CI run.
+* **One real GPU run**: `examples/inference-ci-reliability-001`, six runs per side of
+  BAAI/bge-m3 on one H100 across two vLLM versions. The honest answer was `INCONCLUSIVE`,
+  and it still is.
+* **The format readers**: tested against records built from each tool's source code. They
+  have not yet been run on a large set of real files from each tool, so please
+  [report](https://github.com/dundysm/inference-doctor/issues/new/choose) any file they
+  misread.
+* **Not yet**: a gate running in another project's CI. See [STATUS.md](STATUS.md).
 
-Deliberately not included yet: hosted GPU provisioning, dashboard/SaaS, optimizer, Kubernetes operator, SGLang support, or automatic root-cause analysis.
+## Help test it
 
-## Development
+The most useful thing right now is a real change: run `compare-runs` on results from your
+own benchmark and open a **Benchmark feedback** issue saying what it decided, whether that
+was right, and what was confusing. Redact prompts, credentials, private model names and
+customer data.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). The changelog is [CHANGELOG.md](CHANGELOG.md).
+The experiments that informed the design live under `experiments/`.
 
 ```bash
 python -m pip install -e ".[dev]"
@@ -164,6 +180,6 @@ python -m pytest -q
 ruff check . && ruff format --check . && mypy
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [CHANGELOG.md](CHANGELOG.md), and [LICENSE](LICENSE).
+## License
 
-Historical experiments that informed the measurement-quality design live under `experiments/`.
+Apache-2.0. See [LICENSE](LICENSE).
