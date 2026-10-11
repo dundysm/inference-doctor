@@ -56,7 +56,6 @@ including the anomalous baseline block. Its official result is
 `INCONCLUSIVE`: the observed throughput delta was about -4.19%, but baseline
 CV was 8.93%, above the 5% stability threshold.
 
-The optional [GitHub Actions workflow](../.github/workflows/inference-ci.yml)
-assumes a self-hosted runner already has benchmark artifacts in
-`artifacts/baseline` and `artifacts/candidate`. It writes the result, means,
+The [GitHub Action](github-actions.md) runs the same decision in CI on
+benchmark results your own runner produced. It writes the result, means,
 delta, and CVs to the job summary and preserves the CLI exit code.

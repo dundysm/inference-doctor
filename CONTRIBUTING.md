@@ -35,6 +35,9 @@ Before opening a pull request:
 ```bash
 python -m pip install -e ".[dev]"
 python -m pytest -q
+ruff check . && ruff format --check . && mypy
 ```
+
+CI runs the same checks, with tests on Python 3.11 and 3.14 on Linux and on 3.14 on macOS and Windows.
 
 Use clear commit messages and describe the validation performed in the pull request.

@@ -1,0 +1,99 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:  # a release workflow can run this before it builds
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy
+
+  test:
+    # Oldest and newest supported Python on Linux, and the newest on macOS and Windows
+    # (the README documents PowerShell). No GPU: the suite uses synthetic results and the
+    # checked-in examples.
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.11", "3.14"]
+        include:
+          - os: macos-latest
+            python-version: "3.14"
+          - os: windows-latest
+            python-version: "3.14"
+    env:
+      TYPER_USE_RICH: "0"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: python -m pytest -q -rs
+      - name: The CLI runs and reports its version
+        run: inference-doctor --version
+
+  action:
+    # Runs this repository's composite Action the way a caller would.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: The quickstart passes through the Action
+        id: quickstart
+        uses: ./
+        with:
+          baseline: examples/quickstart/baseline
+          candidate: examples/quickstart/candidate
+          metric: texts_per_second
+
+      - name: The Action reports PASS
+        env:
+          RESULT: ${{ steps.quickstart.outputs.result }}
+        run: test "$RESULT" = "PASS"
+
+      - name: A missing directory is reported as ERROR
+        id: invalid
+        continue-on-error: true
+        uses: ./
+        with:
+          baseline: examples/quickstart/does-not-exist
+          candidate: examples/quickstart/candidate
+          metric: texts_per_second
+
+      - name: The Action reports ERROR
+        env:
+          RESULT: ${{ steps.invalid.outputs.result }}
+        run: test "$RESULT" = "ERROR"

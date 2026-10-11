@@ -1,6 +1,6 @@
 # Inference Doctor
 
-[![CI](https://github.com/dundysm/inference-doctor/actions/workflows/inference-ci.yml/badge.svg)](https://github.com/dundysm/inference-doctor/actions/workflows/inference-ci.yml)
+[![CI](https://github.com/dundysm/inference-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/dundysm/inference-doctor/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 **Stop shipping inference regressions.**
@@ -169,6 +169,7 @@ Deliberately not included yet: hosted GPU provisioning, dashboard/SaaS, optimize
 ```bash
 python -m pip install -e ".[dev]"
 python -m pytest -q
+ruff check . && ruff format --check . && mypy
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [CHANGELOG.md](CHANGELOG.md), and [LICENSE](LICENSE).
