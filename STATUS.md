@@ -47,10 +47,10 @@ October 11, 2026. inference-doctor 0.4.1 (`pip install inference-doctor`; the Ac
 - `--gpu` and `--model` label both sides at once, so they cannot catch a run on the wrong
   GPU. Only GPU names recorded in the results (vLLM `--metadata`, AIPerf telemetry) are
   compared.
-- `diagnose` is experimental (re-verification: #10). Its rules are checked against synthetic snapshots. The
+- `diagnose` is experimental. Its rules are checked against synthetic snapshots. The
   queue rule changed in 0.4.0 to require queue evidence, and the one real integration run
   of it (E003 in `docs/experiment-log.md`) was recorded under the old rule without the
-  waiting-request count, so it has not been re-verified.
+  waiting-request count, so it has not been re-verified (#10).
 - `compare` is deprecated: it judges one run against one run and cannot measure noise.
 
 ## What is left
