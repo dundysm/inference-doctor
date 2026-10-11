@@ -196,7 +196,7 @@ def test_compare_cli_same_version_unstable_exits_nonzero(tmp_path):
         ],
     )
 
-    assert result.exit_code == 1
+    assert result.exit_code == 2
     payload = json.loads(result.output)
     assert payload["overall_status"] == "UNSTABLE"
 
@@ -340,5 +340,5 @@ def test_compare_cli_rejects_incomparable_runs(tmp_path):
         ],
     )
 
-    assert result.exit_code == 2
+    assert result.exit_code == 3
     assert "incomparable" in result.output

@@ -8,7 +8,7 @@ inference-doctor compare \
   --candidate candidate.json
 ```
 
-Use `--json` for machine-readable output. Exit code `0` means the comparison passed, `1` means a regression failed the guard or a same-version control is unstable, and `2` means the inputs or thresholds were invalid or the runs were incomparable. WARN rows do not fail the overall guard.
+Use `--json` for machine-readable output. Exit code `0` means the comparison passed, `1` means a regression failed the guard, `2` means a same-version control is unstable, and `3` means no decision was made because the inputs or thresholds were invalid, the runs were incomparable, or the tool hit an internal error. WARN rows do not fail the overall guard.
 
 Same-version controls use a separate stability mode:
 
@@ -20,7 +20,7 @@ inference-doctor compare \
   --stability-tolerance-percent 5
 ```
 
-In this mode, percentage-based metrics are STABLE/PASS only when the absolute percentage variation is within the tolerance. Positive and negative variation beyond the tolerance produce `UNSTABLE` and exit code `1`. Cross-version comparisons keep the directional regression semantics shown below.
+In this mode, percentage-based metrics are STABLE/PASS only when the absolute percentage variation is within the tolerance. Positive and negative variation beyond the tolerance produce `UNSTABLE` and exit code `2`. Cross-version comparisons keep the directional regression semantics shown below.
 
 ## Normalized input schema
 

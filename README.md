@@ -117,7 +117,9 @@ Supported metrics include output-token throughput, request throughput, texts/sec
 | `PASS` | Stable measurements; threshold not crossed | 0 |
 | `FAIL` | Stable measurements; regression threshold crossed | 1 |
 | `INCONCLUSIVE` | Measurement quality/comparability is not good enough to decide | 2 |
-| input error | Invalid schema/files/arguments | 3 |
+| error | No decision: invalid arguments, schema or files, or an internal error | 3 |
+
+Every command uses these codes: `compare` exits 2 for `UNSTABLE`, and `diagnose` exits 3 when Prometheus cannot be queried. `inference-doctor --version` prints the installed version.
 
 Use `--json` for machine-readable output. See [measurement quality](docs/measurement-quality.md) for the decision semantics and [benchmark format](docs/benchmark-format.md) for the input contract.
 

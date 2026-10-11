@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Added
+
+- `inference-doctor --version`, and `python -m inference_doctor`.
+
+### Changed
+
+- One exit-code scheme for every command: 0 PASS, 1 FAIL, 2 INCONCLUSIVE or UNSTABLE, 3 error with no decision. Before, `compare-runs` exited 2 (the INCONCLUSIVE code) for a missing directory or a mistyped option, `compare` exited 1 for UNSTABLE and 2 for invalid input, and `diagnose` exited 1 when Prometheus could not be queried.
+- An internal error now prints one line and exits 3 instead of printing a traceback and exiting 1, which a CI job read as FAIL. Set `INFERENCE_DOCTOR_DEBUG=1` for the traceback.
+- The package moved to `src/` and builds with setuptools. The version is defined once, in `inference_doctor/__init__.py`; it said 0.1.0 while the package metadata said 0.3.0.
+
 ## 0.3.0 - 2026-09-14
 
 ### Added

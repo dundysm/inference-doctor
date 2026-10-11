@@ -269,5 +269,5 @@ def test_cli_reports_snapshot_collection_errors():
             ],
         )
 
-    assert result.exit_code == 1
+    assert result.exit_code == 3
     assert "Invalid window" in result.output
