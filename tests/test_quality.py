@@ -6,12 +6,11 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
+from inference_doctor import telemetry
 from inference_doctor.cli import app
 from inference_doctor.quality import (
     compare_repeated_runs,
 )
-from inference_doctor import telemetry
-
 
 runner = CliRunner()
 
@@ -47,8 +46,8 @@ def _runs(values: list[float], *, version: str = "0.19.0") -> list:
         payload = _payload(value)
         payload["environment"]["vllm_version"] = version
         path = Path(f"repetition-{index + 1:03d}.json")
-        from inference_doctor.quality import RepeatedRun
         from inference_doctor.benchmark_results import parse_normalized_benchmark
+        from inference_doctor.quality import RepeatedRun
 
         runs.append(RepeatedRun(path, parse_normalized_benchmark(payload), value))
     return runs

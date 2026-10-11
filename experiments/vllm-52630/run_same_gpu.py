@@ -1,19 +1,18 @@
 from __future__ import annotations
 
 import argparse
-from itertools import combinations
 import json
 import os
 import posixpath
 import signal
 import subprocess
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from itertools import combinations
 from pathlib import Path
 from typing import Any
 
 import httpx
-
 from aggregate import aggregate_repetitions, render_summary
 from compare_results import compare_results, render_table
 from harness_common import (
@@ -24,7 +23,6 @@ from harness_common import (
     require_matching_gpu_uuid,
     write_json,
 )
-
 
 EXPERIMENT_DIR = Path(__file__).resolve().parent
 
@@ -103,11 +101,7 @@ def verify_no_vllm_process() -> None:
         capture_output=True,
         text=True,
     )
-    lines = [
-        line
-        for line in result.stdout.splitlines()
-        if "pgrep -af vllm" not in line
-    ]
+    lines = [line for line in result.stdout.splitlines() if "pgrep -af vllm" not in line]
     if lines:
         raise ExperimentError("vLLM processes remain after server shutdown")
 
@@ -149,9 +143,7 @@ def run_variant(
         capture_output=True,
         text=True,
     )
-    (variant_dir / "packages.freeze.txt").write_text(
-        freeze.stdout, encoding="utf-8"
-    )
+    (variant_dir / "packages.freeze.txt").write_text(freeze.stdout, encoding="utf-8")
     log_path = variant_dir / "server.log"
     server_url = f"http://127.0.0.1:{config['server']['port']}"
     process, command = start_server(
@@ -165,7 +157,7 @@ def run_variant(
             variant_dir / "server.json",
             {
                 "launch_command": command,
-                "started_at": datetime.now(timezone.utc).isoformat(),
+                "started_at": datetime.now(UTC).isoformat(),
                 "server_url": server_url,
             },
         )
@@ -229,9 +221,7 @@ def run_comparison(
         },
     )
     write_json(output_dir / f"{name}.json", result)
-    (output_dir / f"{name}.txt").write_text(
-        render_table(result), encoding="utf-8"
-    )
+    (output_dir / f"{name}.txt").write_text(render_table(result), encoding="utf-8")
     print(f"\n{name}\n{render_table(result)}")
     return result["overall_status"]
 
@@ -280,10 +270,7 @@ def historical_regression_is_reproduced(
         None,
     )
     percentage_delta = None if metric is None else metric.get("percentage_delta")
-    return (
-        percentage_delta is not None
-        and percentage_delta <= -fail_threshold_percent
-    )
+    return percentage_delta is not None and percentage_delta <= -fail_threshold_percent
 
 
 def parse_args() -> argparse.Namespace:
@@ -311,7 +298,7 @@ def main() -> int:
         output_root / "run.json",
         {
             "experiment": config,
-            "started_at": datetime.now(timezone.utc).isoformat(),
+            "started_at": datetime.now(UTC).isoformat(),
             "baseline_gpu": baseline_gpu,
             "runtime": collect_runtime_metadata(),
         },
@@ -385,8 +372,12 @@ def main() -> int:
             primary_concurrency=primary_concurrency,
             fail_threshold_percent=config["comparison"]["throughput_fail_percent"],
         ),
-        "baseline_best_stable_plateau": load_json(baseline_aggregate_path)["metrics"]["best_stable_plateau"],
-        "candidate_best_stable_plateau": load_json(candidate_aggregate_path)["metrics"]["best_stable_plateau"],
+        "baseline_best_stable_plateau": load_json(baseline_aggregate_path)["metrics"][
+            "best_stable_plateau"
+        ],
+        "candidate_best_stable_plateau": load_json(candidate_aggregate_path)["metrics"][
+            "best_stable_plateau"
+        ],
     }
     write_json(output_root / "summary.json", summary)
     print(json.dumps(summary, indent=2))

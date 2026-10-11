@@ -15,7 +15,6 @@ from inference_doctor.benchmark_results import (
     load_normalized_benchmark,
 )
 
-
 QUALITY_SCHEMA_VERSION = "inference-ci-quality-1"
 
 
@@ -90,21 +89,16 @@ def discover_run_paths(directory: Path) -> list[Path]:
     paths = {
         path
         for path in paths
-        if "aggregate" not in path.name.lower()
-        and path.name not in {"summary.json", "run.json"}
+        if "aggregate" not in path.name.lower() and path.name not in {"summary.json", "run.json"}
     }
     if not paths:
-        raise QualityInputError(
-            f"No normalized repeated-run JSON files found under '{directory}'"
-        )
+        raise QualityInputError(f"No normalized repeated-run JSON files found under '{directory}'")
     return sorted(paths)
 
 
 def load_repeated_runs(directory: Path, metric: str) -> list[RepeatedRun]:
     if metric not in METRICS:
-        raise QualityInputError(
-            f"Unknown metric '{metric}'. Choose one of: {', '.join(METRICS)}"
-        )
+        raise QualityInputError(f"Unknown metric '{metric}'. Choose one of: {', '.join(METRICS)}")
     runs: list[RepeatedRun] = []
     for path in discover_run_paths(directory):
         result = load_normalized_benchmark(path)
@@ -141,9 +135,7 @@ def _outlier_paths(runs: list[RepeatedRun]) -> list[str]:
     }
     if mad > 0:
         flagged.update(
-            index
-            for index, value in enumerate(numbers)
-            if abs(value - median) > 3 * mad
+            index for index, value in enumerate(numbers) if abs(value - median) > 3 * mad
         )
     return [str(runs[index].path) for index in sorted(flagged)]
 
@@ -172,9 +164,7 @@ def summarize_runs(runs: list[RepeatedRun]) -> dict[str, Any]:
             "median": statistics.median(values),
             "sample_standard_deviation": standard_deviation,
             "cv_percent": (
-                standard_deviation / mean * 100
-                if standard_deviation is not None and mean
-                else None
+                standard_deviation / mean * 100 if standard_deviation is not None and mean else None
             ),
             "min": min(values),
             "max": max(values),
@@ -225,8 +215,7 @@ def compare_repeated_runs(
         (label, run.path)
         for label, runs in (("baseline", baseline), ("candidate", candidate))
         for run in runs
-        if run.result.metrics.requests.failed is None
-        or run.result.metrics.requests.failed > 0
+        if run.result.metrics.requests.failed is None or run.result.metrics.requests.failed > 0
     ]
     if failed_requests:
         reasons.append("one or more repetitions recorded failed or unavailable requests")
@@ -255,7 +244,9 @@ def compare_repeated_runs(
         status = "INCONCLUSIVE"
     elif regression_percent is not None and regression_percent >= thresholds.regression_percent:
         status = "FAIL"
-        reasons.append(f"candidate regression reached the {thresholds.regression_percent:g}% threshold")
+        reasons.append(
+            f"candidate regression reached the {thresholds.regression_percent:g}% threshold"
+        )
     else:
         status = "PASS"
 

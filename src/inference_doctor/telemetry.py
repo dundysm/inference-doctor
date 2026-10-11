@@ -3,16 +3,14 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 import threading
-import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-
 GPU_QUERY = (
-    "uuid,utilization.gpu,clocks.sm,clocks.mem,power.draw,temperature.gpu,"
-    "pstate,memory.used"
+    "uuid,utilization.gpu,clocks.sm,clocks.mem,power.draw,temperature.gpu,pstate,memory.used"
 )
 
 
@@ -70,10 +68,11 @@ def _cpu_sample() -> dict[str, Any]:
     except (ImportError, AttributeError, OSError):
         pass
 
-    try:
-        sample["load_average"] = list(os.getloadavg())
-    except (AttributeError, OSError):
-        pass
+    if sys.platform != "win32":
+        try:
+            sample["load_average"] = list(os.getloadavg())
+        except OSError:
+            pass
     try:
         memory = {
             line.split(":", 1)[0]: int(line.split()[1])
@@ -91,7 +90,7 @@ def _cpu_sample() -> dict[str, Any]:
 
 def sample_once() -> dict[str, Any]:
     sample: dict[str, Any] = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "available": True,
         "gpu_uuid": None,
         "gpu_utilization_percent": None,

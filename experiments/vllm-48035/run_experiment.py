@@ -5,21 +5,20 @@ import json
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import httpx
-
 from aggregate import aggregate_raw_runs, render_summary
 from benchmark_client import run_repetition
-from harness_common import load_json, write_json
 from harness_common import (
     collect_runtime_metadata,
+    load_json,
     parse_gpu_metadata,
     require_matching_gpu_uuid,
+    write_json,
 )
-
 
 EXPERIMENT_DIR = Path(__file__).resolve().parent
 CONTAINER_NAME = "inference-doctor-vllm-48035"
@@ -57,9 +56,7 @@ def ensure_container_name_is_free() -> None:
         check=False,
     )
     if result.returncode == 0:
-        raise RuntimeError(
-            f"Docker container name '{CONTAINER_NAME}' is already in use"
-        )
+        raise RuntimeError(f"Docker container name '{CONTAINER_NAME}' is already in use")
 
 
 def wait_for_health(timeout_seconds: int) -> None:
@@ -87,9 +84,7 @@ def wait_for_health(timeout_seconds: int) -> None:
         except httpx.HTTPError:
             pass
         time.sleep(2)
-    raise TimeoutError(
-        f"vLLM did not become healthy within {timeout_seconds} seconds"
-    )
+    raise TimeoutError(f"vLLM did not become healthy within {timeout_seconds} seconds")
 
 
 def build_docker_command(
@@ -219,7 +214,7 @@ def run_variant(
             "image": variant["image"],
             "resolved_image": image_metadata,
             "launch_command": launch_command,
-            "healthy_at": datetime.now(timezone.utc).isoformat(),
+            "healthy_at": datetime.now(UTC).isoformat(),
         },
     )
 
@@ -287,9 +282,7 @@ def compare_files(
         common.append("--same-version")
     json_result = run_command([*common, "--json"], check=False)
     if json_result.returncode not in (0, 1):
-        raise RuntimeError(
-            f"Comparison '{name}' failed: {json_result.stderr.strip()}"
-        )
+        raise RuntimeError(f"Comparison '{name}' failed: {json_result.stderr.strip()}")
     payload = json.loads(json_result.stdout)
     write_json(output_dir / f"{name}.json", payload)
 
@@ -334,16 +327,14 @@ def main() -> int:
         raise SystemExit("At least two repetitions are required for controls")
 
     output_root = args.output_dir or (
-        EXPERIMENT_DIR
-        / "results"
-        / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        EXPERIMENT_DIR / "results" / datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     )
     output_root = output_root.resolve()
     output_root.mkdir(parents=True, exist_ok=False)
 
     baseline_gpu = verify_gpu(config["gpu"])
     run_metadata = {
-        "started_at": datetime.now(timezone.utc).isoformat(),
+        "started_at": datetime.now(UTC).isoformat(),
         "experiment": config,
         "baseline_host": baseline_gpu,
     }
@@ -408,14 +399,9 @@ def main() -> int:
         "candidate_control": candidate_control,
         "baseline_vs_candidate": cross_version,
         "gpu_uuid": matching_gpu_uuid,
-        "cross_version_valid": (
-            baseline_control == "PASS"
-            and candidate_control == "PASS"
-        ),
+        "cross_version_valid": (baseline_control == "PASS" and candidate_control == "PASS"),
         "historical_regression_reproduced": (
-            baseline_control == "PASS"
-            and candidate_control == "PASS"
-            and cross_version == "FAIL"
+            baseline_control == "PASS" and candidate_control == "PASS" and cross_version == "FAIL"
         ),
     }
     write_json(output_root / "summary.json", summary)

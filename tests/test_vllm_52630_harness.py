@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-
 EXPERIMENT_DIR = Path(__file__).parent.parent / "experiments" / "vllm-52630"
 sys.path.insert(0, str(EXPERIMENT_DIR))
 for _module in ("harness_common", "aggregate", "compare_results", "run_same_gpu"):
@@ -52,8 +51,7 @@ def _point(value: float, latency: float = 10.0, failed: int = 0) -> dict:
 
 def _raw(values: tuple[float, float, float], repetition: int = 1) -> dict:
     results = {
-        str(level): _point(value, latency=level / 2)
-        for level, value in zip((16, 32, 64), values)
+        str(level): _point(value, latency=level / 2) for level, value in zip((16, 32, 64), values)
     }
     return {
         "schema_version": "vllm-52630-raw-1",
@@ -113,7 +111,9 @@ def test_aggregation_groups_concurrency_and_reports_run_statistics():
     result = aggregate.aggregate_repetitions(runs)
     assert result["metrics"]["texts_per_second"]["32"]["mean"] == pytest.approx(100.0)
     assert result["metrics"]["texts_per_second"]["32"]["median"] == pytest.approx(100.0)
-    assert result["metrics"]["texts_per_second"]["32"]["sample_standard_deviation"] == pytest.approx(1.0)
+    assert result["metrics"]["texts_per_second"]["32"][
+        "sample_standard_deviation"
+    ] == pytest.approx(1.0)
     assert result["metrics"]["request_latency_median_ms"]["64"]["median"] == pytest.approx(31.0)
     assert result["metrics"]["request_latency_p95_ms"]["64"]["median"] == pytest.approx(50.0)
     assert result["metrics"]["request_latency_p95_ms"]["64"]["p95"] == pytest.approx(59.0)
@@ -140,16 +140,12 @@ def test_same_version_controls_use_absolute_stability():
     )
     candidate = copy.deepcopy(baseline)
     candidate["metrics"]["texts_per_second"]["16"] = 115.0
-    result = compare_results.compare_results(
-        baseline, candidate, same_version=True
-    )
+    result = compare_results.compare_results(baseline, candidate, same_version=True)
     assert result["overall_status"] == "UNSTABLE"
     assert result["metrics"][0]["status"] == "UNSTABLE"
 
     candidate["metrics"]["texts_per_second"]["16"] = 101.0
-    result = compare_results.compare_results(
-        baseline, candidate, same_version=True
-    )
+    result = compare_results.compare_results(baseline, candidate, same_version=True)
     assert result["overall_status"] == "PASS"
 
 
@@ -190,8 +186,14 @@ def test_normalized_result_is_json_serializable():
 
 
 def test_runner_uses_each_variant_environment_python():
-    assert run_same_gpu.variant_python_executable({"environment_path": "/workspace/envs/v0190"}) == "/workspace/envs/v0190/bin/python"
-    assert run_same_gpu.variant_python_executable({"environment_path": "/workspace/envs/v0210"}) == "/workspace/envs/v0210/bin/python"
+    assert (
+        run_same_gpu.variant_python_executable({"environment_path": "/workspace/envs/v0190"})
+        == "/workspace/envs/v0190/bin/python"
+    )
+    assert (
+        run_same_gpu.variant_python_executable({"environment_path": "/workspace/envs/v0210"})
+        == "/workspace/envs/v0210/bin/python"
+    )
 
 
 def test_three_repetition_control_marks_rep3_instability(tmp_path):
@@ -202,7 +204,13 @@ def test_three_repetition_control_marks_rep3_instability(tmp_path):
         name="baseline-vs-baseline",
         variant_dir=variant_dir,
         repetitions=3,
-        config={"comparison": {"stability_tolerance_percent": 5.0, "throughput_warn_percent": 5.0, "throughput_fail_percent": 10.0}},
+        config={
+            "comparison": {
+                "stability_tolerance_percent": 5.0,
+                "throughput_warn_percent": 5.0,
+                "throughput_fail_percent": 10.0,
+            }
+        },
         output_dir=tmp_path / "comparisons",
     )
     assert status == "UNSTABLE"
@@ -216,7 +224,13 @@ def test_three_repetition_control_passes_when_all_pairs_are_stable(tmp_path):
         name="baseline-vs-baseline",
         variant_dir=variant_dir,
         repetitions=3,
-        config={"comparison": {"stability_tolerance_percent": 5.0, "throughput_warn_percent": 5.0, "throughput_fail_percent": 10.0}},
+        config={
+            "comparison": {
+                "stability_tolerance_percent": 5.0,
+                "throughput_warn_percent": 5.0,
+                "throughput_fail_percent": 10.0,
+            }
+        },
         output_dir=tmp_path / "comparisons",
     )
     assert status == "PASS"
@@ -231,13 +245,19 @@ def test_primary_concurrency_gates_historical_reproduction():
         ]
     }
     assert not run_same_gpu.historical_regression_is_reproduced(
-        baseline_control="PASS", candidate_control="PASS", cross_result=cross,
-        primary_concurrency=32, fail_threshold_percent=10.0,
+        baseline_control="PASS",
+        candidate_control="PASS",
+        cross_result=cross,
+        primary_concurrency=32,
+        fail_threshold_percent=10.0,
     )
     cross["metrics"][1]["percentage_delta"] = -10.1
     assert run_same_gpu.historical_regression_is_reproduced(
-        baseline_control="PASS", candidate_control="PASS", cross_result=cross,
-        primary_concurrency=32, fail_threshold_percent=10.0,
+        baseline_control="PASS",
+        candidate_control="PASS",
+        cross_result=cross,
+        primary_concurrency=32,
+        fail_threshold_percent=10.0,
     )
 
 

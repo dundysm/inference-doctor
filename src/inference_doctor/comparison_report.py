@@ -9,7 +9,6 @@ from inference_doctor.comparison import (
     MetricComparison,
 )
 
-
 console = Console()
 
 
@@ -48,19 +47,11 @@ def render_comparison(comparison: BenchmarkComparison) -> None:
         f"[{status_style[comparison.overall_status]}]"
         f"{comparison.overall_status.value}[/]"
     )
+    console.print(f"GPU: {baseline['gpu']}  |  Model: {baseline['model']}")
     console.print(
-        f"GPU: {baseline['gpu']}  |  Model: {baseline['model']}"
+        f"vLLM: {baseline['vllm_version'] or 'N/A'} -> {candidate['vllm_version'] or 'N/A'}"
     )
-    console.print(
-        "vLLM: "
-        f"{baseline['vllm_version'] or 'N/A'} -> "
-        f"{candidate['vllm_version'] or 'N/A'}"
-    )
-    console.print(
-        "Image: "
-        f"{baseline['image'] or 'N/A'} -> "
-        f"{candidate['image'] or 'N/A'}"
-    )
+    console.print(f"Image: {baseline['image'] or 'N/A'} -> {candidate['image'] or 'N/A'}")
 
     table = Table(show_lines=False)
     table.add_column("Metric")

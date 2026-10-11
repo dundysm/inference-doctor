@@ -19,7 +19,6 @@ from inference_doctor.comparison import (
     compare_benchmarks,
 )
 
-
 FIXTURES = Path(__file__).parent / "fixtures" / "compare"
 BASELINE = FIXTURES / "baseline.json"
 CANDIDATE = FIXTURES / "candidate_28pct_regression.json"
@@ -41,9 +40,7 @@ def test_obvious_throughput_regression_fails():
         ComparisonThresholds(),
     )
     output_throughput = next(
-        metric
-        for metric in result.metrics
-        if metric.metric == "output_token_throughput"
+        metric for metric in result.metrics if metric.metric == "output_token_throughput"
     )
 
     assert result.overall_status == ComparisonStatus.FAIL
@@ -62,11 +59,7 @@ def test_warn_band_does_not_fail_overall():
         parse_normalized_benchmark(candidate_payload),
         ComparisonThresholds(),
     )
-    ttft_p95 = next(
-        metric
-        for metric in result.metrics
-        if metric.metric == "ttft_p95_ms"
-    )
+    ttft_p95 = next(metric for metric in result.metrics if metric.metric == "ttft_p95_ms")
 
     assert ttft_p95.percentage_delta == pytest.approx(6.6666667)
     assert ttft_p95.status == ComparisonStatus.WARN
@@ -104,13 +97,16 @@ def test_same_version_large_variation_is_unstable(
         same_version=True,
     )
 
-    metric = next(item for item in result.metrics if item.metric in {
-        "ttft_mean_ms",
-        "output_token_throughput",
-    } and (
-        item.baseline == baseline_value
-        and item.candidate == candidate_value
-    ))
+    metric = next(
+        item
+        for item in result.metrics
+        if item.metric
+        in {
+            "ttft_mean_ms",
+            "output_token_throughput",
+        }
+        and (item.baseline == baseline_value and item.candidate == candidate_value)
+    )
     assert metric.status == ComparisonStatus.UNSTABLE
     assert result.overall_status == ComparisonStatus.UNSTABLE
 
@@ -127,9 +123,7 @@ def test_same_version_small_variation_is_stable():
         same_version=True,
     )
 
-    metric = next(
-        item for item in result.metrics if item.metric == "ttft_mean_ms"
-    )
+    metric = next(item for item in result.metrics if item.metric == "ttft_mean_ms")
     assert metric.status == ComparisonStatus.PASS
     assert result.overall_status == ComparisonStatus.PASS
 
@@ -176,11 +170,7 @@ def test_cross_version_directional_semantics_are_unchanged(
 
     comparison = next(item for item in result.metrics if item.metric == metric)
     assert comparison.status == expected
-    expected_overall = (
-        expected
-        if expected == ComparisonStatus.FAIL
-        else ComparisonStatus.PASS
-    )
+    expected_overall = expected if expected == ComparisonStatus.FAIL else ComparisonStatus.PASS
     assert result.overall_status == expected_overall
 
 
@@ -241,11 +231,7 @@ def test_new_failed_request_fails_from_zero_baseline():
             throughput_fail_percent=100.0,
         ),
     )
-    failed = next(
-        metric
-        for metric in result.metrics
-        if metric.metric == "requests_failed"
-    )
+    failed = next(metric for metric in result.metrics if metric.metric == "requests_failed")
 
     assert failed.absolute_delta == 2.0
     assert failed.percentage_delta is None

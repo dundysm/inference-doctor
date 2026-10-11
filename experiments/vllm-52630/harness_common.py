@@ -6,8 +6,9 @@ import math
 import platform
 import statistics
 import subprocess
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 
 class ExperimentError(ValueError):
@@ -194,13 +195,8 @@ def make_batches(
     batch_size: int,
 ) -> list[list[dict[str, str]]]:
     if len(documents) % batch_size:
-        raise ExperimentError(
-            "Selected document count is not divisible by batch size"
-        )
-    return [
-        documents[start : start + batch_size]
-        for start in range(0, len(documents), batch_size)
-    ]
+        raise ExperimentError("Selected document count is not divisible by batch size")
+    return [documents[start : start + batch_size] for start in range(0, len(documents), batch_size)]
 
 
 def collect_gpu_metadata() -> dict[str, Any]:
@@ -249,9 +245,7 @@ def require_matching_gpu_uuid(
     if not baseline_uuid or not candidate_uuid:
         raise ExperimentError("Both GPU UUIDs are required")
     if baseline_uuid != candidate_uuid:
-        raise ExperimentError(
-            f"GPU UUID mismatch: {baseline_uuid!r} versus {candidate_uuid!r}"
-        )
+        raise ExperimentError(f"GPU UUID mismatch: {baseline_uuid!r} versus {candidate_uuid!r}")
     return baseline_uuid
 
 
@@ -267,8 +261,7 @@ def normalized_repetition(
         "benchmark_parameters": benchmark_parameters,
         "metrics": {
             "texts_per_second": {
-                level: result["texts_per_second"]
-                for level, result in concurrency_results.items()
+                level: result["texts_per_second"] for level, result in concurrency_results.items()
             },
             "request_latency_ms": {
                 level: result["latency_ms"]["median"]
@@ -276,13 +269,9 @@ def normalized_repetition(
             },
             "requests": {
                 "successful": sum(
-                    result["successful_requests"]
-                    for result in concurrency_results.values()
+                    result["successful_requests"] for result in concurrency_results.values()
                 ),
-                "failed": sum(
-                    result["failed_requests"]
-                    for result in concurrency_results.values()
-                ),
+                "failed": sum(result["failed_requests"] for result in concurrency_results.values()),
             },
         },
     }

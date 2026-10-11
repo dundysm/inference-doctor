@@ -3,12 +3,11 @@ from __future__ import annotations
 import argparse
 import json
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import httpx
-
 from harness_common import (
     collect_gpu_metadata,
     collect_runtime_metadata,
@@ -26,15 +25,10 @@ def resolve_variant_metadata(
     variant: str | None,
     image: str | None,
 ) -> tuple[str, str]:
-    variants = {
-        name: config[name]
-        for name in ("baseline", "candidate")
-    }
+    variants = {name: config[name] for name in ("baseline", "candidate")}
     if variant is None:
         matches = [
-            name
-            for name, metadata in variants.items()
-            if metadata["vllm_version"] == version_label
+            name for name, metadata in variants.items() if metadata["vllm_version"] == version_label
         ]
         if len(matches) != 1:
             raise ValueError(
@@ -48,8 +42,7 @@ def resolve_variant_metadata(
     expected_version = variants[variant]["vllm_version"]
     if version_label != expected_version:
         raise ValueError(
-            f"{variant} requires version label {expected_version!r}, "
-            f"got {version_label!r}"
+            f"{variant} requires version label {expected_version!r}, got {version_label!r}"
         )
     return variant, image or variants[variant]["image"]
 
@@ -117,18 +110,10 @@ def run_streaming_request(
 
         finished = time.perf_counter()
         total_latency_ms = (finished - started) * 1000
-        ttft_ms = (
-            (first_token_at - started) * 1000
-            if first_token_at is not None
-            else None
-        )
-        output_tokens_raw = (
-            usage.get("completion_tokens") if usage is not None else None
-        )
+        ttft_ms = (first_token_at - started) * 1000 if first_token_at is not None else None
+        output_tokens_raw = usage.get("completion_tokens") if usage is not None else None
         output_tokens = (
-            int(output_tokens_raw)
-            if isinstance(output_tokens_raw, (int, float))
-            else None
+            int(output_tokens_raw) if isinstance(output_tokens_raw, (int, float)) else None
         )
         derived = request_metrics(
             ttft_ms=ttft_ms,
@@ -183,9 +168,7 @@ def build_benchmark_parameters(
         "top_p": request_config["top_p"],
         "concurrency": request_config["concurrency"],
         "stream": request_config["stream"],
-        "warmup_requests_per_repetition": request_config[
-            "warmup_requests_per_repetition"
-        ],
+        "warmup_requests_per_repetition": request_config["warmup_requests_per_repetition"],
         "repetitions": repetitions,
         "serve_args": serve_args,
     }
@@ -227,7 +210,7 @@ def run_repetition(
         "schema_version": "1",
         "variant": variant,
         "repetition": repetition,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "complete": False,
         "environment": environment,
         "benchmark_parameters": benchmark_parameters,
@@ -280,9 +263,7 @@ def run_repetition(
                 )
                 records.append(record)
                 raw_payload["requests"] = records
-                raw_payload["measured_duration_seconds"] = (
-                    time.perf_counter() - measured_started
-                )
+                raw_payload["measured_duration_seconds"] = time.perf_counter() - measured_started
                 write_json(raw_path, raw_payload)
                 print(
                     f"{variant} repetition {repetition}: "
@@ -294,7 +275,7 @@ def run_repetition(
         client.close()
 
     raw_payload["complete"] = True
-    raw_payload["completed_at"] = datetime.now(timezone.utc).isoformat()
+    raw_payload["completed_at"] = datetime.now(UTC).isoformat()
     raw_payload["measured_duration_seconds"] = measured_duration_seconds
     raw_payload["requests"] = records
     write_json(raw_path, raw_payload)

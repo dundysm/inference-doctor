@@ -8,7 +8,6 @@ from inference_doctor.models import (
     Severity,
 )
 
-
 KV_PRESSURE_THRESHOLD = 0.90
 
 
@@ -40,10 +39,7 @@ def diagnose_queue_pressure(
         )
     ]
 
-    if (
-        snapshot.requests_waiting is not None
-        and snapshot.requests_waiting > 0
-    ):
+    if snapshot.requests_waiting is not None and snapshot.requests_waiting > 0:
         score += 2
         evidence.append(
             Evidence(
@@ -53,10 +49,7 @@ def diagnose_queue_pressure(
             )
         )
 
-    if (
-        snapshot.kv_cache_usage is not None
-        and snapshot.kv_cache_usage >= 0.85
-    ):
+    if snapshot.kv_cache_usage is not None and snapshot.kv_cache_usage >= 0.85:
         score += 1
         evidence.append(
             Evidence(
@@ -85,11 +78,7 @@ def diagnose_queue_pressure(
     if score < 4:
         return None
 
-    severity = (
-        Severity.CRITICAL
-        if score >= 7
-        else Severity.WARNING
-    )
+    severity = Severity.CRITICAL if score >= 7 else Severity.WARNING
 
     return Finding(
         id="QUEUE_PRESSURE",
@@ -183,10 +172,7 @@ def diagnose_decode_pressure(
 def diagnose_kv_pressure(
     snapshot: DiagnosticSnapshot,
 ) -> Finding | None:
-    if (
-        snapshot.kv_cache_usage is None
-        or snapshot.kv_cache_usage < KV_PRESSURE_THRESHOLD
-    ):
+    if snapshot.kv_cache_usage is None or snapshot.kv_cache_usage < KV_PRESSURE_THRESHOLD:
         return None
 
     pressure_signal = False
@@ -201,10 +187,7 @@ def diagnose_kv_pressure(
         )
     ]
 
-    if (
-        snapshot.requests_waiting is not None
-        and snapshot.requests_waiting > 0
-    ):
+    if snapshot.requests_waiting is not None and snapshot.requests_waiting > 0:
         pressure_signal = True
         score += 2
         evidence.append(
@@ -215,10 +198,7 @@ def diagnose_kv_pressure(
             )
         )
 
-    if (
-        snapshot.preemptions_per_min is not None
-        and snapshot.preemptions_per_min > 0
-    ):
+    if snapshot.preemptions_per_min is not None and snapshot.preemptions_per_min > 0:
         pressure_signal = True
         score += 3
         evidence.append(
@@ -242,11 +222,7 @@ def diagnose_kv_pressure(
 
     return Finding(
         id="KV_CACHE_PRESSURE",
-        severity=(
-            Severity.CRITICAL
-            if score >= 7
-            else Severity.WARNING
-        ),
+        severity=(Severity.CRITICAL if score >= 7 else Severity.WARNING),
         confidence=confidence_from_score(score),
         confidence_score=score,
         title="KV-cache pressure",
@@ -261,10 +237,7 @@ def diagnose_kv_pressure(
                 "Replay the workload with lower sequence concurrency and "
                 "compare preemptions, queue depth, and TTFT."
             ),
-            (
-                "Then test increased KV-cache capacity while holding the "
-                "workload constant."
-            ),
+            ("Then test increased KV-cache capacity while holding the workload constant."),
         ],
     )
 

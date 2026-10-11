@@ -3,7 +3,8 @@ from __future__ import annotations
 import math
 import random
 import statistics
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 
 def finite(values: Iterable[float]) -> list[float]:
@@ -22,9 +23,7 @@ def summarize_measurements(
     mean = statistics.fmean(numbers)
     standard_deviation = statistics.stdev(numbers) if len(numbers) >= 2 else None
     cv_percent = (
-        standard_deviation / mean * 100
-        if standard_deviation is not None and mean
-        else None
+        standard_deviation / mean * 100 if standard_deviation is not None and mean else None
     )
     return {
         "count": len(numbers),
@@ -115,9 +114,7 @@ def bootstrap_mean_difference(
         baseline_mean = statistics.fmean(baseline)
         candidate_mean = statistics.fmean(candidate)
         absolute_differences.append(candidate_mean - baseline_mean)
-        percentage_differences.append(
-            (candidate_mean - baseline_mean) / baseline_mean * 100
-        )
+        percentage_differences.append((candidate_mean - baseline_mean) / baseline_mean * 100)
     return {
         "method": "independent empirical bootstrap with replacement across measured blocks",
         "samples": samples,

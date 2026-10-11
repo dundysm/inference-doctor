@@ -28,24 +28,12 @@ def aggregate_raw_runs(
         if run.get("complete") is not True:
             raise ValueError(f"Repetition {index} is incomplete")
         if run["environment"] != environment:
-            raise ValueError(
-                f"Repetition {index} has different environment metadata"
-            )
+            raise ValueError(f"Repetition {index} has different environment metadata")
         if run["benchmark_parameters"] != base_parameters:
-            raise ValueError(
-                f"Repetition {index} has different benchmark parameters"
-            )
+            raise ValueError(f"Repetition {index} has different benchmark parameters")
 
-    all_records = [
-        record
-        for run in raw_runs
-        for record in run.get("requests", [])
-    ]
-    total_duration = sum(
-        finite_numbers(
-            run.get("measured_duration_seconds") for run in raw_runs
-        )
-    )
+    all_records = [record for run in raw_runs for record in run.get("requests", [])]
+    total_duration = sum(finite_numbers(run.get("measured_duration_seconds") for run in raw_runs))
     parameters = dict(base_parameters)
     parameters["repetitions"] = len(raw_runs)
     result = normalized_result(
@@ -56,9 +44,7 @@ def aggregate_raw_runs(
     )
 
     request_decode_rates = finite_numbers(
-        record.get("decode_tokens_per_second")
-        for record in all_records
-        if record.get("success")
+        record.get("decode_tokens_per_second") for record in all_records if record.get("success")
     )
     run_decode_means: list[float] = []
     for run in raw_runs:
@@ -70,36 +56,16 @@ def aggregate_raw_runs(
         if rates:
             run_decode_means.append(statistics.fmean(rates))
 
-    run_mean = (
-        statistics.fmean(run_decode_means)
-        if run_decode_means
-        else None
-    )
-    run_stddev = (
-        statistics.stdev(run_decode_means)
-        if len(run_decode_means) >= 2
-        else None
-    )
-    run_cv = (
-        run_stddev / run_mean
-        if run_stddev is not None and run_mean not in (None, 0)
-        else None
-    )
+    run_mean = statistics.fmean(run_decode_means) if run_decode_means else None
+    run_stddev = statistics.stdev(run_decode_means) if len(run_decode_means) >= 2 else None
+    run_cv = run_stddev / run_mean if run_stddev is not None and run_mean not in (None, 0) else None
 
     result["aggregation"] = {
         "repetitions": len(raw_runs),
         "source_files": source_files or [],
         "decode_tokens_per_second": {
-            "mean": (
-                statistics.fmean(request_decode_rates)
-                if request_decode_rates
-                else None
-            ),
-            "median": (
-                statistics.median(request_decode_rates)
-                if request_decode_rates
-                else None
-            ),
+            "mean": (statistics.fmean(request_decode_rates) if request_decode_rates else None),
+            "median": (statistics.median(request_decode_rates) if request_decode_rates else None),
         },
         "run_to_run_decode_throughput": {
             "repetition_means": run_decode_means,
@@ -122,10 +88,7 @@ def render_summary(result: dict[str, Any]) -> str:
 
     lines = [
         f"Repetitions: {aggregation['repetitions']}",
-        (
-            "Decode tok/s: mean "
-            f"{display(decode['mean'])}, median {display(decode['median'])}"
-        ),
+        (f"Decode tok/s: mean {display(decode['mean'])}, median {display(decode['median'])}"),
         (
             "TTFT ms: mean "
             f"{display(metrics['ttft_ms']['mean'])}, median "
@@ -164,15 +127,11 @@ def main() -> int:
     args = parse_args()
     raw_paths = sorted(args.input_dir.glob("repetition-*/raw.json"))
     if not raw_paths:
-        raise SystemExit(
-            f"No repetition-*/raw.json files found under {args.input_dir}"
-        )
+        raise SystemExit(f"No repetition-*/raw.json files found under {args.input_dir}")
     runs = [load_json(path) for path in raw_paths]
     result = aggregate_raw_runs(
         runs,
-        source_files=[
-            str(path.relative_to(args.input_dir)) for path in raw_paths
-        ],
+        source_files=[str(path.relative_to(args.input_dir)) for path in raw_paths],
     )
     write_json(args.output, result)
     print(render_summary(result))

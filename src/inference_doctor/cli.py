@@ -29,10 +29,7 @@ from inference_doctor.quality import (
 from inference_doctor.quality_report import render_quality_report
 from inference_doctor.report import render_report
 
-
-app = typer.Typer(
-    help="Gate LLM inference performance regressions and diagnose vLLM bottlenecks."
-)
+app = typer.Typer(help="Gate LLM inference performance regressions and diagnose vLLM bottlenecks.")
 
 
 @app.callback()
@@ -75,10 +72,7 @@ def diagnose_command(
             json.dumps(
                 {
                     "snapshot": asdict(snapshot),
-                    "findings": [
-                        finding.to_dict()
-                        for finding in findings
-                    ],
+                    "findings": [finding.to_dict() for finding in findings],
                 },
                 indent=2,
             )

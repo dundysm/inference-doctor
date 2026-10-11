@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 
-
 EXPERIMENT_DIR = Path(__file__).parent.parent / "experiments" / "inference-ci-reliability-001"
 LEGACY_DIR = Path(__file__).parent.parent / "experiments" / "vllm-52630"
 sys.path.insert(0, str(EXPERIMENT_DIR))

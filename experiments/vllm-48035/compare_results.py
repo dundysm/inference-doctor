@@ -19,9 +19,7 @@ from harness_common import (
 def prepare_aggregate(input_dir: Path) -> tuple[Path, list[Path]]:
     raw_paths = sorted(input_dir.glob("repetition-*/raw.json"))
     if len(raw_paths) < 2:
-        raise ValueError(
-            f"At least two complete repetitions are required under {input_dir}"
-        )
+        raise ValueError(f"At least two complete repetitions are required under {input_dir}")
 
     raw_runs = [load_json(path) for path in raw_paths]
     normalized_paths: list[Path] = []
@@ -84,9 +82,7 @@ def run_comparison(
         text=True,
     )
     if json_result.returncode not in (0, 1):
-        raise RuntimeError(
-            f"Comparison {name!r} failed: {json_result.stderr.strip()}"
-        )
+        raise RuntimeError(f"Comparison {name!r} failed: {json_result.stderr.strip()}")
     payload = json.loads(json_result.stdout)
     write_json(output_dir / f"{name}.json", payload)
 
@@ -97,9 +93,7 @@ def run_comparison(
         text=True,
     )
     if terminal_result.returncode not in (0, 1):
-        raise RuntimeError(
-            f"Comparison {name!r} failed: {terminal_result.stderr.strip()}"
-        )
+        raise RuntimeError(f"Comparison {name!r} failed: {terminal_result.stderr.strip()}")
     (output_dir / f"{name}.txt").write_text(
         terminal_result.stdout,
         encoding="utf-8",
@@ -116,9 +110,7 @@ def run_offline_comparisons(
     config: dict[str, Any],
 ) -> dict[str, Any]:
     baseline_aggregate, baseline_repetitions = prepare_aggregate(baseline_dir)
-    candidate_aggregate, candidate_repetitions = prepare_aggregate(
-        candidate_dir
-    )
+    candidate_aggregate, candidate_repetitions = prepare_aggregate(candidate_dir)
 
     baseline_payload = load_json(baseline_aggregate)
     candidate_payload = load_json(candidate_aggregate)
@@ -153,9 +145,7 @@ def run_offline_comparisons(
         output_dir=output_dir,
     )
 
-    controls_pass = (
-        baseline_control == "PASS" and candidate_control == "PASS"
-    )
+    controls_pass = baseline_control == "PASS" and candidate_control == "PASS"
     summary = {
         "gpu_uuid": gpu_uuid,
         "gpu_uuid_match": True,
@@ -163,9 +153,7 @@ def run_offline_comparisons(
         "candidate_control": candidate_control,
         "baseline_vs_candidate": cross_version,
         "cross_version_valid": controls_pass,
-        "historical_regression_reproduced": (
-            controls_pass and cross_version == "FAIL"
-        ),
+        "historical_regression_reproduced": (controls_pass and cross_version == "FAIL"),
     }
     write_json(output_dir / "summary.json", summary)
     return summary

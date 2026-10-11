@@ -59,9 +59,7 @@ def _metric(
         percentage = _percent_delta(baseline, candidate)
         if same_version:
             status = (
-                "PASS"
-                if percentage is not None and abs(percentage) <= tolerance
-                else "UNSTABLE"
+                "PASS" if percentage is not None and abs(percentage) <= tolerance else "UNSTABLE"
             )
         elif percentage is None:
             status = "WARN"

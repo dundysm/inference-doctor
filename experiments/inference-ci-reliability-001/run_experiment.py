@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import posixpath
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -140,7 +138,7 @@ def run_block(
         {
             "launch_command": command,
             "server_log": str(log_path),
-            "started_at": datetime.now(timezone.utc).isoformat(),
+            "started_at": datetime.now(UTC).isoformat(),
             "server_url": server_url,
             "gpu_uuid_before": before["gpu_uuid"],
         },
@@ -197,7 +195,7 @@ def main() -> int:
         raise ExperimentError("Output directory must not already exist")
     args.output_dir.mkdir(parents=True, exist_ok=False)
 
-    started_at = datetime.now(timezone.utc).isoformat()
+    started_at = datetime.now(UTC).isoformat()
     write_json(
         args.output_dir / "run.json",
         {
@@ -255,7 +253,7 @@ def main() -> int:
         "decision": decision,
         "bootstrap_supporting_evidence": bootstrap,
         "no_outlier_removal": True,
-        "completed_at": datetime.now(timezone.utc).isoformat(),
+        "completed_at": datetime.now(UTC).isoformat(),
     }
     write_json(args.output_dir / "summary.json", summary)
     print(json.dumps(summary, indent=2))

@@ -4,16 +4,15 @@ from pathlib import Path
 
 import pytest
 
-
-EXPERIMENT_DIR = (
-    Path(__file__).parent.parent / "experiments" / "vllm-48035"
-)
+EXPERIMENT_DIR = Path(__file__).parent.parent / "experiments" / "vllm-48035"
 sys.path.insert(0, str(EXPERIMENT_DIR))
 
-from aggregate import aggregate_raw_runs  # noqa: E402
 import compare_results  # noqa: E402
+from aggregate import aggregate_raw_runs  # noqa: E402
 from benchmark_client import (  # noqa: E402
     parse_args as parse_benchmark_args,
+)
+from benchmark_client import (  # noqa: E402
     resolve_variant_metadata,
 )
 from harness_common import (  # noqa: E402
@@ -23,10 +22,10 @@ from harness_common import (  # noqa: E402
     require_matching_gpu_uuid,
 )
 from run_experiment import build_docker_command  # noqa: E402
+
 from inference_doctor.benchmark_results import (  # noqa: E402
     parse_normalized_benchmark,
 )
-
 
 ENVIRONMENT = {
     "gpu": "NVIDIA GeForce RTX 4090",
@@ -118,9 +117,7 @@ def test_aggregation_reports_run_to_run_variation():
     )
 
     parsed = parse_normalized_benchmark(result)
-    variation = result["aggregation"][
-        "run_to_run_decode_throughput"
-    ]
+    variation = result["aggregation"]["run_to_run_decode_throughput"]
 
     assert parsed.benchmark_parameters["repetitions"] == 2
     assert parsed.metrics.output_token_throughput == 100.0
@@ -132,12 +129,8 @@ def test_aggregation_reports_run_to_run_variation():
     }
     assert variation["repetition_means"] == [110.0, 90.0]
     assert variation["mean"] == 100.0
-    assert variation["sample_standard_deviation"] == pytest.approx(
-        14.1421356
-    )
-    assert variation["coefficient_of_variation"] == pytest.approx(
-        0.141421356
-    )
+    assert variation["sample_standard_deviation"] == pytest.approx(14.1421356)
+    assert variation["coefficient_of_variation"] == pytest.approx(0.141421356)
 
 
 def test_aggregation_rejects_incomplete_repetition():
@@ -149,12 +142,8 @@ def test_aggregation_rejects_incomplete_repetition():
 
 
 def test_committed_workload_shape_is_fixed():
-    config = json.loads(
-        (EXPERIMENT_DIR / "experiment.json").read_text(encoding="utf-8")
-    )
-    prompts = json.loads(
-        (EXPERIMENT_DIR / "prompts.json").read_text(encoding="utf-8")
-    )
+    config = json.loads((EXPERIMENT_DIR / "experiment.json").read_text(encoding="utf-8"))
+    prompts = json.loads((EXPERIMENT_DIR / "prompts.json").read_text(encoding="utf-8"))
 
     assert len(prompts) == 10
     assert len({prompt["id"] for prompt in prompts}) == 10
@@ -199,9 +188,7 @@ def test_external_server_cli_defaults_to_repetition_set(tmp_path):
 
 
 def test_version_label_resolves_manifest_variant_and_image():
-    config = json.loads(
-        (EXPERIMENT_DIR / "experiment.json").read_text(encoding="utf-8")
-    )
+    config = json.loads((EXPERIMENT_DIR / "experiment.json").read_text(encoding="utf-8"))
 
     variant, image = resolve_variant_metadata(
         config,
@@ -254,12 +241,7 @@ def test_offline_driver_aborts_before_comparison_on_gpu_change(
         ("candidate", candidate_environment),
     ):
         for repetition in (1, 2):
-            path = (
-                tmp_path
-                / variant
-                / f"repetition-{repetition:03d}"
-                / "raw.json"
-            )
+            path = tmp_path / variant / f"repetition-{repetition:03d}" / "raw.json"
             path.parent.mkdir(parents=True)
             path.write_text(
                 json.dumps(
@@ -277,9 +259,7 @@ def test_offline_driver_aborts_before_comparison_on_gpu_change(
     monkeypatch.setattr(
         compare_results,
         "run_comparison",
-        lambda **kwargs: pytest.fail(
-            "comparison ran before GPU UUID validation"
-        ),
+        lambda **kwargs: pytest.fail("comparison ran before GPU UUID validation"),
     )
 
     with pytest.raises(ValueError, match="GPU UUID mismatch"):
@@ -314,12 +294,7 @@ def test_offline_driver_labels_matching_uuid_cross_result_valid(
         ("candidate", candidate_environment),
     ):
         for repetition in (1, 2):
-            path = (
-                tmp_path
-                / variant
-                / f"repetition-{repetition:03d}"
-                / "raw.json"
-            )
+            path = tmp_path / variant / f"repetition-{repetition:03d}" / "raw.json"
             path.parent.mkdir(parents=True)
             path.write_text(
                 json.dumps(

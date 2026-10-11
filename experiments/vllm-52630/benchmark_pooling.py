@@ -7,12 +7,11 @@ import importlib.metadata
 import json
 import os
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import httpx
-
 from harness_common import (
     ExperimentError,
     collect_gpu_metadata,
@@ -75,9 +74,7 @@ async def send_batch(
         "num_texts": len(texts),
         "text_characters": sum(len(text) for text in texts),
         "payload_bytes": _payload_bytes(texts, model),
-        "request_sha256": hashlib.sha256(
-            "\n".join(texts).encode("utf-8")
-        ).hexdigest(),
+        "request_sha256": hashlib.sha256("\n".join(texts).encode("utf-8")).hexdigest(),
         "success": False,
         "status_code": None,
         "latency_ms": None,
@@ -97,9 +94,7 @@ async def send_batch(
         record["texts_returned"] = len(data)
         record["success"] = len(data) == len(texts)
         if not record["success"]:
-            record["error"] = (
-                f"Expected {len(texts)} embeddings, received {len(data)}"
-            )
+            record["error"] = f"Expected {len(texts)} embeddings, received {len(data)}"
     except (httpx.HTTPError, ValueError) as exc:
         record["error"] = f"{type(exc).__name__}: {exc}"
     finally:
@@ -161,9 +156,7 @@ async def run_concurrency_point(
             )
 
     started = time.perf_counter()
-    records = await asyncio.gather(
-        *(limited(index, batch) for index, batch in enumerate(batches))
-    )
+    records = await asyncio.gather(*(limited(index, batch) for index, batch in enumerate(batches)))
     duration = time.perf_counter() - started
     successful = [record for record in records if record["success"]]
     failed = [record for record in records if not record["success"]]
@@ -305,7 +298,7 @@ def main() -> int:
     raw = {
         "schema_version": "vllm-52630-raw-1",
         "complete": True,
-        "started_at": datetime.now(timezone.utc).isoformat(),
+        "started_at": datetime.now(UTC).isoformat(),
         "environment": environment,
         "benchmark_parameters": parameters,
         "client": client_metadata,

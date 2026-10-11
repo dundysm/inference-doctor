@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class Severity(str, Enum):
+class Severity(StrEnum):
     CRITICAL = "critical"
     WARNING = "warning"
     INFO = "info"
 
 
-class Confidence(str, Enum):
+class Confidence(StrEnum):
     HIGH = "high"
     MEDIUM = "medium"
     LOW = "low"

@@ -72,9 +72,7 @@ def _require_mapping(value: Any, field: str) -> dict[str, Any]:
 def _require_string(mapping: dict[str, Any], field: str) -> str:
     value = mapping.get(field)
     if not isinstance(value, str) or not value.strip():
-        raise BenchmarkResultError(
-            f"'environment.{field}' must be a non-empty string"
-        )
+        raise BenchmarkResultError(f"'environment.{field}' must be a non-empty string")
     return value
 
 
@@ -83,9 +81,7 @@ def _optional_string(mapping: dict[str, Any], field: str) -> str | None:
     if value is None:
         return None
     if not isinstance(value, str) or not value.strip():
-        raise BenchmarkResultError(
-            f"'environment.{field}' must be a string or null"
-        )
+        raise BenchmarkResultError(f"'environment.{field}' must be a string or null")
     return value
 
 
@@ -98,17 +94,13 @@ def _metric_number(
     if value is None:
         return None
     if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise BenchmarkResultError(
-            f"'{field}' must be a non-negative number or null"
-        )
+        raise BenchmarkResultError(f"'{field}' must be a non-negative number or null")
 
     number = float(value)
     if not math.isfinite(number):
         return None
     if number < 0:
-        raise BenchmarkResultError(
-            f"'{field}' must be a non-negative number or null"
-        )
+        raise BenchmarkResultError(f"'{field}' must be a non-negative number or null")
     return number
 
 
@@ -135,9 +127,7 @@ def parse_normalized_benchmark(payload: Any) -> BenchmarkResult:
     root = _require_mapping(payload, "root")
     schema_version = root.get("schema_version")
     if schema_version != "1":
-        raise BenchmarkResultError(
-            "'schema_version' must be '1' for normalized benchmark results"
-        )
+        raise BenchmarkResultError("'schema_version' must be '1' for normalized benchmark results")
 
     environment_raw = _require_mapping(
         root.get("environment"),
@@ -148,9 +138,7 @@ def parse_normalized_benchmark(payload: Any) -> BenchmarkResult:
         "benchmark_parameters",
     )
     if not parameters:
-        raise BenchmarkResultError(
-            "'benchmark_parameters' must not be empty"
-        )
+        raise BenchmarkResultError("'benchmark_parameters' must not be empty")
     metrics = _require_mapping(root.get("metrics"), "metrics")
 
     requests_raw = metrics.get("requests")
@@ -211,9 +199,7 @@ def load_normalized_benchmark(path: Path) -> BenchmarkResult:
     except OSError as exc:
         raise BenchmarkResultError(f"Could not read '{path}': {exc}") from exc
     except json.JSONDecodeError as exc:
-        raise BenchmarkResultError(
-            f"Invalid JSON in '{path}': {exc.msg}"
-        ) from exc
+        raise BenchmarkResultError(f"Invalid JSON in '{path}': {exc.msg}") from exc
 
     return parse_normalized_benchmark(payload)
 
@@ -226,21 +212,15 @@ def ensure_comparable(
 
     if baseline.environment.gpu != candidate.environment.gpu:
         differences.append(
-            "environment.gpu "
-            f"({baseline.environment.gpu!r} != "
-            f"{candidate.environment.gpu!r})"
+            f"environment.gpu ({baseline.environment.gpu!r} != {candidate.environment.gpu!r})"
         )
     if baseline.environment.model != candidate.environment.model:
         differences.append(
-            "environment.model "
-            f"({baseline.environment.model!r} != "
-            f"{candidate.environment.model!r})"
+            f"environment.model ({baseline.environment.model!r} != {candidate.environment.model!r})"
         )
     if baseline.benchmark_parameters != candidate.benchmark_parameters:
         differences.append("benchmark_parameters")
 
     if differences:
         joined = ", ".join(differences)
-        raise IncomparableBenchmarkError(
-            f"Benchmark runs are incomparable: {joined} differ"
-        )
+        raise IncomparableBenchmarkError(f"Benchmark runs are incomparable: {joined} differ")

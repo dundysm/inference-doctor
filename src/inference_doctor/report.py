@@ -10,7 +10,6 @@ from inference_doctor.models import (
     Severity,
 )
 
-
 console = Console()
 
 
@@ -24,14 +23,8 @@ def render_summary(
     snapshot: DiagnosticSnapshot,
     findings: list[Finding],
 ) -> None:
-    critical = sum(
-        finding.severity == Severity.CRITICAL
-        for finding in findings
-    )
-    warning = sum(
-        finding.severity == Severity.WARNING
-        for finding in findings
-    )
+    critical = sum(finding.severity == Severity.CRITICAL for finding in findings)
+    warning = sum(finding.severity == Severity.WARNING for finding in findings)
 
     table = Table(show_header=False)
     table.add_row("TTFT p95", milliseconds(snapshot.ttft_p95))
@@ -52,19 +45,11 @@ def render_summary(
     )
     table.add_row(
         "Waiting requests",
-        (
-            f"{snapshot.requests_waiting:.0f}"
-            if snapshot.requests_waiting is not None
-            else "N/A"
-        ),
+        (f"{snapshot.requests_waiting:.0f}" if snapshot.requests_waiting is not None else "N/A"),
     )
     table.add_row(
         "KV cache",
-        (
-            f"{snapshot.kv_cache_usage * 100:.1f}%"
-            if snapshot.kv_cache_usage is not None
-            else "N/A"
-        ),
+        (f"{snapshot.kv_cache_usage * 100:.1f}%" if snapshot.kv_cache_usage is not None else "N/A"),
     )
     table.add_row(
         "Preemptions/min",
@@ -95,14 +80,8 @@ def render_finding(
     }[finding.severity]
 
     console.print()
-    console.print(
-        f"[bold]{severity_icon} P{number} — "
-        f"{finding.title.upper()}[/bold]"
-    )
-    console.print(
-        f"Confidence: "
-        f"[bold]{finding.confidence.value.upper()}[/bold]"
-    )
+    console.print(f"[bold]{severity_icon} P{number} — {finding.title.upper()}[/bold]")
+    console.print(f"Confidence: [bold]{finding.confidence.value.upper()}[/bold]")
 
     console.print()
     console.print("[bold]Evidence[/bold]")
@@ -119,9 +98,7 @@ def render_finding(
         else:
             observed_display = "N/A"
 
-        console.print(
-            f"  • {evidence.metric}: {observed_display}"
-        )
+        console.print(f"  • {evidence.metric}: {observed_display}")
 
     console.print()
     console.print("[bold]Diagnosis[/bold]")
@@ -142,9 +119,7 @@ def render_report(
 
     if not findings:
         console.print()
-        console.print(
-            "[green]No diagnostic conditions were triggered.[/green]"
-        )
+        console.print("[green]No diagnostic conditions were triggered.[/green]")
         return
 
     for index, finding in enumerate(findings):

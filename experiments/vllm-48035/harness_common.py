@@ -8,8 +8,9 @@ import platform
 import socket
 import statistics
 import subprocess
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 
 class GpuIdentityError(ValueError):
@@ -19,9 +20,7 @@ class GpuIdentityError(ValueError):
 def parse_gpu_metadata(output: str, expected_gpu: str) -> dict[str, str]:
     rows = [row.strip() for row in output.splitlines() if row.strip()]
     if len(rows) != 1:
-        raise RuntimeError(
-            f"Expected exactly one visible GPU, found {len(rows)}"
-        )
+        raise RuntimeError(f"Expected exactly one visible GPU, found {len(rows)}")
 
     parts = [part.strip() for part in rows[0].split(",")]
     if len(parts) != 4:
@@ -87,20 +86,15 @@ def require_matching_gpu_uuid(
     ):
         environment = payload.get("environment")
         if not isinstance(environment, dict):
-            raise GpuIdentityError(
-                f"{label} environment metadata is missing"
-            )
+            raise GpuIdentityError(f"{label} environment metadata is missing")
         gpu_uuid = environment.get("gpu_uuid")
         if not isinstance(gpu_uuid, str) or not gpu_uuid.strip():
-            raise GpuIdentityError(
-                f"{label} environment.gpu_uuid must be a non-empty string"
-            )
+            raise GpuIdentityError(f"{label} environment.gpu_uuid must be a non-empty string")
         uuids[label] = gpu_uuid.strip()
 
     if uuids["baseline"] != uuids["candidate"]:
         raise GpuIdentityError(
-            "GPU UUID mismatch: baseline "
-            f"{uuids['baseline']!r}, candidate {uuids['candidate']!r}"
+            f"GPU UUID mismatch: baseline {uuids['baseline']!r}, candidate {uuids['candidate']!r}"
         )
     return uuids["baseline"]
 
@@ -129,9 +123,7 @@ def percentile(values: Iterable[Any], quantile: float) -> float | None:
     if lower == upper:
         return numbers[lower]
     fraction = position - lower
-    return numbers[lower] + (
-        (numbers[upper] - numbers[lower]) * fraction
-    )
+    return numbers[lower] + ((numbers[upper] - numbers[lower]) * fraction)
 
 
 def summarize(values: Iterable[Any]) -> dict[str, float | None]:
@@ -182,9 +174,7 @@ def request_metrics(
     ):
         decoded_tokens = output_tokens - 1
         tpot_ms = decode_duration_ms / decoded_tokens
-        decode_tokens_per_second = decoded_tokens / (
-            decode_duration_ms / 1000
-        )
+        decode_tokens_per_second = decoded_tokens / (decode_duration_ms / 1000)
 
     return {
         "decode_duration_ms": decode_duration_ms,
@@ -202,24 +192,16 @@ def normalized_result(
 ) -> dict[str, Any]:
     successful = [record for record in records if record.get("success")]
     failed_count = len(records) - len(successful)
-    decode_rates = finite_numbers(
-        record.get("decode_tokens_per_second") for record in successful
-    )
+    decode_rates = finite_numbers(record.get("decode_tokens_per_second") for record in successful)
 
     return {
         "schema_version": "1",
         "environment": environment,
         "benchmark_parameters": benchmark_parameters,
         "metrics": {
-            "ttft_ms": summarize(
-                record.get("ttft_ms") for record in successful
-            ),
-            "tpot_ms": summarize(
-                record.get("tpot_ms") for record in successful
-            ),
-            "output_token_throughput": (
-                statistics.fmean(decode_rates) if decode_rates else None
-            ),
+            "ttft_ms": summarize(record.get("ttft_ms") for record in successful),
+            "tpot_ms": summarize(record.get("tpot_ms") for record in successful),
+            "output_token_throughput": (statistics.fmean(decode_rates) if decode_rates else None),
             "request_throughput": (
                 len(successful) / measured_duration_seconds
                 if measured_duration_seconds > 0

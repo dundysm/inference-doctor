@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from inference_doctor.benchmark_results import BenchmarkResult
 
 
-class ComparisonStatus(str, Enum):
+class ComparisonStatus(StrEnum):
     PASS = "PASS"
     WARN = "WARN"
     FAIL = "FAIL"
@@ -36,13 +36,11 @@ class ComparisonThresholds:
             raise ValueError("Comparison thresholds must be non-negative")
         if self.latency_fail_percent < self.latency_warn_percent:
             raise ValueError(
-                "Latency fail threshold must be greater than or equal "
-                "to the warn threshold"
+                "Latency fail threshold must be greater than or equal to the warn threshold"
             )
         if self.throughput_fail_percent < self.throughput_warn_percent:
             raise ValueError(
-                "Throughput fail threshold must be greater than or equal "
-                "to the warn threshold"
+                "Throughput fail threshold must be greater than or equal to the warn threshold"
             )
 
 
@@ -85,24 +83,12 @@ class BenchmarkComparison:
             "baseline": self.baseline_metadata,
             "candidate": self.candidate_metadata,
             "thresholds": {
-                "latency_warn_percent": (
-                    self.thresholds.latency_warn_percent
-                ),
-                "latency_fail_percent": (
-                    self.thresholds.latency_fail_percent
-                ),
-                "throughput_warn_percent": (
-                    self.thresholds.throughput_warn_percent
-                ),
-                "throughput_fail_percent": (
-                    self.thresholds.throughput_fail_percent
-                ),
-                "max_failed_request_increase": (
-                    self.thresholds.max_failed_request_increase
-                ),
-                "stability_tolerance_percent": (
-                    self.thresholds.stability_tolerance_percent
-                ),
+                "latency_warn_percent": (self.thresholds.latency_warn_percent),
+                "latency_fail_percent": (self.thresholds.latency_fail_percent),
+                "throughput_warn_percent": (self.thresholds.throughput_warn_percent),
+                "throughput_fail_percent": (self.thresholds.throughput_fail_percent),
+                "max_failed_request_increase": (self.thresholds.max_failed_request_increase),
+                "stability_tolerance_percent": (self.thresholds.stability_tolerance_percent),
             },
             "metrics": [metric.to_dict() for metric in self.metrics],
         }
@@ -150,11 +136,7 @@ def _compare_percent_metric(
             stable = candidate == baseline
         else:
             stable = abs(percentage_delta) <= stability_tolerance_percent
-        status = (
-            ComparisonStatus.PASS
-            if stable
-            else ComparisonStatus.UNSTABLE
-        )
+        status = ComparisonStatus.PASS if stable else ComparisonStatus.UNSTABLE
     elif percentage_delta is None:
         if candidate == baseline:
             regression_percent = 0.0
@@ -163,11 +145,7 @@ def _compare_percent_metric(
         else:
             regression_percent = float("-inf")
     else:
-        regression_percent = (
-            percentage_delta
-            if lower_is_better
-            else -percentage_delta
-        )
+        regression_percent = percentage_delta if lower_is_better else -percentage_delta
 
         if regression_percent >= fail_percent:
             status = ComparisonStatus.FAIL
@@ -288,9 +266,7 @@ def compare_benchmarks(
                 warn_percent=thresholds.latency_warn_percent,
                 fail_percent=thresholds.latency_fail_percent,
                 same_version=same_version,
-                stability_tolerance_percent=(
-                    thresholds.stability_tolerance_percent
-                ),
+                stability_tolerance_percent=(thresholds.stability_tolerance_percent),
             )
         )
 
@@ -335,9 +311,7 @@ def compare_benchmarks(
                 warn_percent=thresholds.throughput_warn_percent,
                 fail_percent=thresholds.throughput_fail_percent,
                 same_version=same_version,
-                stability_tolerance_percent=(
-                    thresholds.stability_tolerance_percent
-                ),
+                stability_tolerance_percent=(thresholds.stability_tolerance_percent),
             )
         )
 

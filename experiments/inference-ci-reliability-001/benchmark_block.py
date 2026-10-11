@@ -6,12 +6,12 @@ import importlib.metadata
 import json
 import sys
 import time
-from datetime import datetime, timezone
+from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 import httpx
-
 from common import collect_gpu_metadata, load_documents, load_json, make_batches, write_json
 
 try:
@@ -25,12 +25,11 @@ if str(LEGACY_DIR) not in sys.path:
 
 from benchmark_pooling import send_batch  # noqa: E402
 
-
 RequestSender = Callable[[int, list[dict[str, str]], int, str], Awaitable[dict[str, Any]]]
 
 
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def cycle_batch_indices(batch_count: int, request_count: int) -> list[int]:
@@ -58,6 +57,7 @@ async def run_window(
         raise ValueError("concurrency must be positive")
 
     if request_sender is None:
+
         async def request_sender(
             batch_index: int,
             batch: list[dict[str, str]],
@@ -170,9 +170,7 @@ def package_metadata() -> dict[str, Any]:
 
         result["torch_cuda"] = torch.version.cuda
         result["cuda_available"] = bool(torch.cuda.is_available())
-        result["cuda_device"] = (
-            torch.cuda.get_device_name(0) if torch.cuda.is_available() else None
-        )
+        result["cuda_device"] = torch.cuda.get_device_name(0) if torch.cuda.is_available() else None
     except (ImportError, RuntimeError):
         result["torch_cuda"] = None
         result["cuda_available"] = None

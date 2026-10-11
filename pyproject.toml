@@ -75,8 +75,12 @@ select = ["E", "F", "W", "I", "B", "UP"]
 ignore = ["B905", "E501"]
 
 [tool.ruff.lint.flake8-bugbear]
-# typer declares CLI options as call defaults by design.
-extend-immutable-calls = ["typer.Option", "typer.Argument"]
+# typer declares CLI options as call defaults by design; QualityThresholds is frozen.
+extend-immutable-calls = [
+    "typer.Option",
+    "typer.Argument",
+    "inference_doctor.quality.QualityThresholds",
+]
 
 [tool.mypy]
 files = ["src/inference_doctor"]

@@ -65,19 +65,13 @@ def aggregate_repetitions(
     }
     request_latency_median_stats = {
         level: _metric_stats(
-            [
-                run["concurrency_results"][level]["latency_ms"]["median"]
-                for run in raw_runs
-            ]
+            [run["concurrency_results"][level]["latency_ms"]["median"] for run in raw_runs]
         )
         for level in levels
     }
     request_latency_p95_stats = {
         level: _metric_stats(
-            [
-                run["concurrency_results"][level]["latency_ms"]["p95"]
-                for run in raw_runs
-            ]
+            [run["concurrency_results"][level]["latency_ms"]["p95"] for run in raw_runs]
         )
         for level in levels
     }
@@ -86,8 +80,7 @@ def aggregate_repetitions(
         for level in levels
         if (
             texts_stats[level]["coefficient_of_variation"] is not None
-            and texts_stats[level]["coefficient_of_variation"]
-            <= stability_tolerance_percent / 100
+            and texts_stats[level]["coefficient_of_variation"] <= stability_tolerance_percent / 100
         )
     ]
     best_level = max(
@@ -97,9 +90,9 @@ def aggregate_repetitions(
     )
     best_observed_level = max(
         levels,
-        key=lambda level: texts_stats[level]["mean"]
-        if texts_stats[level]["mean"] is not None
-        else float("-inf"),
+        key=lambda level: (
+            texts_stats[level]["mean"] if texts_stats[level]["mean"] is not None else float("-inf")
+        ),
         default=None,
     )
     successful = sum(
@@ -108,9 +101,7 @@ def aggregate_repetitions(
         for level in levels
     )
     failed = sum(
-        run["concurrency_results"][level]["failed_requests"]
-        for run in raw_runs
-        for level in levels
+        run["concurrency_results"][level]["failed_requests"] for run in raw_runs for level in levels
     )
 
     result = {
@@ -168,7 +159,11 @@ def render_summary(result: dict[str, Any]) -> str:
     plateau = result["metrics"]["best_stable_plateau"]
     lines.append(
         "Best stable plateau: "
-        + ("N/A" if plateau is None else f"concurrency {plateau['concurrency']}, {plateau['texts_per_second']:.2f} texts/s")
+        + (
+            "N/A"
+            if plateau is None
+            else f"concurrency {plateau['concurrency']}, {plateau['texts_per_second']:.2f} texts/s"
+        )
     )
     requests = result["metrics"]["requests"]
     lines.append(f"Requests: successful {requests['successful']}, failed {requests['failed']}")

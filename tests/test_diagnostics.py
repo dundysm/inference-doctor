@@ -4,15 +4,14 @@ import pytest
 from typer.testing import CliRunner
 
 from inference_doctor.cli import app
-from inference_doctor.diagnostics import diagnose
-from inference_doctor.models import DiagnosticSnapshot
 from inference_doctor.collectors.prometheus import (
     PrometheusClient,
     build_snapshot,
     histogram_p95,
     parse_window,
 )
-
+from inference_doctor.diagnostics import diagnose
+from inference_doctor.models import DiagnosticSnapshot
 
 runner = CliRunner()
 
@@ -82,10 +81,7 @@ def test_queue_p95_is_observational_only():
     assert high_queue_finding.id == "QUEUE_PRESSURE"
     assert low_queue_finding.confidence_score == 4
     assert high_queue_finding.confidence_score == 4
-    assert all(
-        evidence.metric != "queue_time_p95"
-        for evidence in high_queue_finding.evidence
-    )
+    assert all(evidence.metric != "queue_time_p95" for evidence in high_queue_finding.evidence)
 
 
 def test_kv_pressure():
@@ -243,14 +239,8 @@ def test_build_snapshot_queries_current_vllm_preemption_counter():
         and "vllm:request_queue_time_seconds_count[15m]" in query
         for query in queries
     )
-    assert any(
-        "vllm:request_prefill_time_seconds_bucket[15m]" in query
-        for query in queries
-    )
-    assert any(
-        "vllm:request_prompt_tokens_bucket[15m]" in query
-        for query in queries
-    )
+    assert any("vllm:request_prefill_time_seconds_bucket[15m]" in query for query in queries)
+    assert any("vllm:request_prompt_tokens_bucket[15m]" in query for query in queries)
     assert snapshot.queue_mean == 0.0
     assert snapshot.prefill_time_p95 == 0.0
     assert snapshot.prompt_tokens_p95 == 0.0

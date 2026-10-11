@@ -7,7 +7,6 @@ import httpx
 
 from inference_doctor.models import DiagnosticSnapshot
 
-
 WINDOW_RE = re.compile(r"^(?P<value>\d+)(?P<unit>[smhd])$")
 
 
@@ -15,10 +14,7 @@ def parse_window(window: str) -> int:
     match = WINDOW_RE.match(window)
 
     if not match:
-        raise ValueError(
-            f"Invalid window '{window}'. "
-            "Expected values like 30s, 5m, 1h."
-        )
+        raise ValueError(f"Invalid window '{window}'. Expected values like 30s, 5m, 1h.")
 
     value = int(match.group("value"))
     unit = match.group("unit")
@@ -150,17 +146,11 @@ rate(vllm:request_queue_time_seconds_count[{window}])
             )
         )
 
-        requests_running = client.query(
-            "sum(vllm:num_requests_running)"
-        )
+        requests_running = client.query("sum(vllm:num_requests_running)")
 
-        requests_waiting = client.query(
-            "sum(vllm:num_requests_waiting)"
-        )
+        requests_waiting = client.query("sum(vllm:num_requests_waiting)")
 
-        kv_cache_usage = client.query(
-            "max(vllm:kv_cache_usage_perc)"
-        )
+        kv_cache_usage = client.query("max(vllm:kv_cache_usage_perc)")
 
         preemptions_per_second = client.query(
             f"""
@@ -173,9 +163,7 @@ sum(
         )
 
         preemptions_per_min = (
-            preemptions_per_second * 60
-            if preemptions_per_second is not None
-            else None
+            preemptions_per_second * 60 if preemptions_per_second is not None else None
         )
 
         return DiagnosticSnapshot(
@@ -190,16 +178,8 @@ sum(
             requests_waiting=requests_waiting,
             kv_cache_usage=kv_cache_usage,
             preemptions_per_min=preemptions_per_min,
-            ttft_slo=(
-                ttft_slo_ms / 1000
-                if ttft_slo_ms is not None
-                else None
-            ),
-            tpot_slo=(
-                tpot_slo_ms / 1000
-                if tpot_slo_ms is not None
-                else None
-            ),
+            ttft_slo=(ttft_slo_ms / 1000 if ttft_slo_ms is not None else None),
+            tpot_slo=(tpot_slo_ms / 1000 if tpot_slo_ms is not None else None),
         )
 
     finally:
