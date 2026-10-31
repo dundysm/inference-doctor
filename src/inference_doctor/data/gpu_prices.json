@@ -1,0 +1,18 @@
+{
+  "_note": "On-demand list prices in USD per GPU-hour, copied from the cited public pages on 2026-10-31. Prices change often; pass --price to override.",
+  "sources": {
+    "runpod": {"url": "https://www.runpod.io/pricing", "page_updated": "2026-10-08", "retrieved": "2026-10-31", "tier": "Pods, Secure Cloud, on-demand"},
+    "together": {"url": "https://www.together.ai/pricing#gpu-clusters", "retrieved": "2026-10-31", "tier": "GPU Clusters, on-demand"}
+  },
+  "gpus": {
+    "B300":     {"vram_gb": 288, "fp8": true,  "rel_throughput": 3.0, "prices": {"runpod": 8.99, "together": 9.99}},
+    "B200":     {"vram_gb": 180, "fp8": true,  "rel_throughput": 2.5, "prices": {"runpod": 7.99, "together": 8.19}},
+    "H200":     {"vram_gb": 141, "fp8": true,  "rel_throughput": 1.4, "prices": {"runpod": 5.29, "together": 5.99}},
+    "H100-SXM": {"vram_gb": 80,  "fp8": true,  "rel_throughput": 1.0, "prices": {"runpod": 3.99, "together": 3.99}},
+    "H100-PCIE":{"vram_gb": 80,  "fp8": true,  "rel_throughput": 0.8, "prices": {"runpod": 2.89}},
+    "A100-80G": {"vram_gb": 80,  "fp8": false, "rel_throughput": 0.5, "prices": {"runpod": 1.79}},
+    "L40S":     {"vram_gb": 48,  "fp8": true,  "rel_throughput": 0.35,"prices": {"runpod": 1.09}},
+    "L4":       {"vram_gb": 24,  "fp8": true,  "rel_throughput": 0.12,"prices": {"runpod": 0.59}}
+  },
+  "_rel_throughput_note": "rel_throughput is a rough decode-throughput multiplier vs H100-SXM used ONLY for the 'cheaper GPU' heuristic. It is an assumption, not a measured or published number."
+}

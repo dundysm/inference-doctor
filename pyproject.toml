@@ -87,3 +87,6 @@ files = ["src/inference_doctor"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.setuptools.package-data]
+inference_doctor = ["data/*.json", "data/cost_demo/*.prom"]
