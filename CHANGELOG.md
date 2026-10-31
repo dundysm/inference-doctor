@@ -11,6 +11,7 @@
 - Action inputs `cost-gpu`, `cost-gpus`, `cost-price`, `cost-max-increase-percent` turn on the cost gate, which adds a job-summary section and outputs `cost-result` and `cost-change-percent`. Off by default; existing workflows are unchanged.
 - GPU and API list prices ship in `data/gpu_prices.json` and `data/api_prices.json` with source URLs and the retrieval date (2026-10-31). `--price` overrides them. Relative GPU throughput used for "switch GPU" is an assumption and is labelled one.
 - `docs/cost.md` separates what is measured from what is heuristic.
+- Checked against real vLLM 0.32.0 scrapes (Qwen2.5-0.5B on an RTX A5000), now a test fixture. Two `--metrics` files without `--seconds` use the files' modification times as the window; an unlisted GPU works with `--price`.
 
 ## 0.4.1 - 2026-10-11
 

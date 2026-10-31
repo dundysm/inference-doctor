@@ -424,6 +424,11 @@ def cost_command(
             usage = costmod.usage_from_benchmarks([r.result for r in loaded.records])
         elif texts:
             snaps = [cm.snapshot_from_text(t) for t in texts[:2]]
+            if metrics and len(snaps) == 2 and seconds is None:
+                # Plain /metrics has no scrape time; fall back to when each file was written.
+                for snap, path in zip(snaps, metrics[:2], strict=True):
+                    if snap.timestamp is None:
+                        snap.timestamp = path.stat().st_mtime
             usage = costmod.usage_from_window(
                 cm.window(snaps[0], snaps[1] if len(snaps) > 1 else None, seconds)
             )

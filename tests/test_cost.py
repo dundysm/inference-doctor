@@ -141,3 +141,51 @@ def test_cli_demo():
     res = CliRunner().invoke(app, ["cost", "--demo"])
     assert res.exit_code == 0, res.output
     assert "Ranked fixes" in res.output and "/GPU-h" in res.output
+
+
+REAL = Path(__file__).parent / "fixtures" / "real_vllm_0_32"
+
+
+def test_real_vllm_0_32_scrape():
+    snaps = [cm.snapshot_from_text((REAL / f"t{i}.prom").read_text()) for i in (0, 1)]
+    w = cm.window(snaps[0], snaps[1], 60)
+    assert w.engine == "vllm"
+    assert w.prompt_tps == pytest.approx((1199128 - 376000) / 60)
+    assert w.gen_tps == pytest.approx((368976 - 114576) / 60)
+    assert snaps[1].prefix_caching_enabled is True
+    assert 0.8 < w.prefix_hit_rate < 0.9
+
+
+def test_real_scrape_unlisted_gpu_with_price():
+    args = [
+        "cost",
+        "--metrics",
+        str(REAL / "t0.prom"),
+        "--metrics",
+        str(REAL / "t1.prom"),
+        "--seconds",
+        "60",
+        "--gpu",
+        "RTX A5000",
+        "--price",
+        "0.27",
+        "--json",
+    ]
+    res = CliRunner().invoke(app, args)
+    assert res.exit_code == 0, res.output
+    data = json.loads(res.output)
+    assert not any(f["title"].startswith(("Switch GPU", "Quantize")) for f in data["fixes"])
+
+
+def test_metrics_files_fall_back_to_mtime(tmp_path):
+    import os
+
+    a, b = tmp_path / "a.prom", tmp_path / "b.prom"
+    a.write_text((REAL / "t0.prom").read_text())
+    b.write_text((REAL / "t1.prom").read_text())
+    os.utime(a, (1000, 1000))
+    os.utime(b, (1060, 1060))
+    res = CliRunner().invoke(
+        app, ["cost", "--metrics", str(a), "--metrics", str(b), "--gpu", "L4", "--json"]
+    )
+    assert res.exit_code == 0, res.output

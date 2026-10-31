@@ -43,3 +43,18 @@ Savings overlap and are not additive.
 https://www.runpod.io/pricing (Secure Cloud on-demand, page dated 2026-10-08) and
 https://www.together.ai/pricing (GPU Clusters on-demand; serverless per-1M-token prices).
 Prices move; pass `--price` with what you actually pay.
+
+## Validated on a real server
+
+`tests/fixtures/real_vllm_0_32/` holds two real scrapes of vLLM 0.32.0 (Qwen2.5-0.5B-Instruct,
+one RTX A5000, 2026-10-31). Every metric the cost view reads was present under the expected
+name; plain `/metrics` has no scrape time, so with two `--metrics` files and no `--seconds`
+the window falls back to the files' modification times. An unlisted GPU works with `--price`
+(FP8 and switch-GPU advice are skipped since its capabilities are unknown).
+
+```
+$ inference-doctor cost --metrics t0.prom --metrics t1.prom --seconds 60 --gpu "RTX A5000" --price 0.27
+  throughput        13,719 prompt + 4,240 output tok/s   [measured]
+  cost / 1M tokens  $0.004 all, $0.018 output
+```
+SGLang names are still checked only against synthetic fixtures.

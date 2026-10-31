@@ -140,7 +140,13 @@ def analyze(
     tp: int = 1,
     api_model: str | None = None,
 ) -> CostReport:
-    key, row = resolve_gpu(gpu)
+    try:
+        key, row = resolve_gpu(gpu)
+    except ValueError:
+        if price is None:
+            raise
+        # Unlisted GPU with the price the user pays: no FP8 or switch-GPU advice.
+        key, row = gpu, {}
     if price is None:
         price, src = list_price(key, provider)
     else:
@@ -230,9 +236,9 @@ def analyze(
                 "heuristic",
             )
         )
-    cur_eff = price / row["rel_throughput"]
+    cur_eff = price / row["rel_throughput"] if row else 0.0
     best = None
-    for other, orow in gpu_table()["gpus"].items():
+    for other, orow in gpu_table()["gpus"].items() if row else []:
         if other == key:
             continue
         oprice = min(orow["prices"].values())
