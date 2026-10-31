@@ -2,7 +2,10 @@
 
 `inference-doctor cost` turns the numbers a serving engine already exposes into dollars:
 $/1M tokens, an estimate of the money spent on idle capacity, and a ranked list of fixes.
-`inference-doctor cost-compare` gates a change on its $/1M output tokens.
+`inference-doctor cost-compare` gates a change on its $/1M output tokens with the Welch
+log-ratio interval used by `compare-runs` (PASS, FAIL or INCONCLUSIVE; exit 0/1/2). In the
+Action, set `cost-gpu` (or `cost-price`) and optionally `cost-gpus` and
+`cost-max-increase-percent`.
 
 ```
 inference-doctor cost --demo                                   # bundled sample, no GPU

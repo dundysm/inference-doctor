@@ -91,3 +91,21 @@ Environment and workload parameters must be comparable across runs. See [measure
 ## Why INCONCLUSIVE exists
 
 A simple threshold can produce false confidence when benchmark variance is high. Inference Doctor refuses to make a merge recommendation when the confidence interval cannot separate the candidate from the threshold, requests fail, required metrics are unavailable, there are too few repetitions, or benchmark environments are not comparable.
+
+## Cost gate (experimental)
+
+Add `cost-gpu` (list price) or `cost-price` (what you pay per GPU-hour) to also gate
+$/1M output tokens; see [cost](cost.md).
+
+```yaml
+  with:
+    baseline: results/main
+    candidate: results/my-branch
+    cost-gpu: H100-SXM
+    cost-gpus: "2"
+    cost-max-increase-percent: "5"
+```
+
+The cost gate uses the same `confidence` and `min-repetitions`, adds its own job-summary
+table, and sets `cost-result` and `cost-change-percent`. A cost `FAIL` or `INCONCLUSIVE`
+fails the step after the performance verdict.

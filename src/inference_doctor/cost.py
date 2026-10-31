@@ -320,10 +320,51 @@ def render(rep: CostReport) -> str:
     return "\n".join(lines)
 
 
+@dataclass
+class CostGate:
+    result: str  # PASS | FAIL | INCONCLUSIVE
+    baseline_mean: float
+    candidate_mean: float
+    change_percent: float
+    change_percent_low: float
+    change_percent_high: float
+    confidence: float
+    max_increase_percent: float
+    runs: tuple[int, int]
+
+    def to_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+
 def cost_gate(
-    baseline: list[float], candidate: list[float], max_increase_pct: float
-) -> tuple[str, float]:
-    """Compare median $/1M tokens. Returns (PASS|FAIL, change in percent)."""
-    b, c = statistics.median(baseline), statistics.median(candidate)
-    change = (c - b) / b * 100
-    return ("FAIL" if change > max_increase_pct else "PASS"), change
+    baseline: list[float],
+    candidate: list[float],
+    max_increase_pct: float,
+    confidence: float = 0.9,
+) -> CostGate:
+    """Gate on $/1M tokens with the same Welch log-ratio interval as compare-runs.
+
+    FAIL when the whole interval for the increase is above the limit, PASS when the
+    whole interval is at or below it, INCONCLUSIVE when it straddles the limit.
+    """
+    from inference_doctor.stats import welch_log_ratio_interval
+
+    iv = welch_log_ratio_interval(baseline, candidate, confidence)
+    low, high = (iv.low - 1) * 100, (iv.high - 1) * 100
+    if low > max_increase_pct:
+        result = "FAIL"
+    elif high <= max_increase_pct:
+        result = "PASS"
+    else:
+        result = "INCONCLUSIVE"
+    return CostGate(
+        result,
+        statistics.fmean(baseline),
+        statistics.fmean(candidate),
+        (iv.ratio - 1) * 100,
+        low,
+        high,
+        confidence,
+        max_increase_pct,
+        (len(baseline), len(candidate)),
+    )

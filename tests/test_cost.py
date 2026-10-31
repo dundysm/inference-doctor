@@ -1,4 +1,6 @@
+import json
 from importlib import resources
+from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
@@ -92,8 +94,47 @@ def test_price_table_is_sourced():
 
 
 def test_gate():
-    assert cost.cost_gate([1.0, 1.0, 1.0], [1.2, 1.2, 1.2], 5)[0] == "FAIL"
-    assert cost.cost_gate([1.0, 1.0, 1.0], [1.01, 1.0, 1.02], 5)[0] == "PASS"
+    assert cost.cost_gate([1.0, 1.01, 0.99], [1.2, 1.21, 1.19], 5).result == "FAIL"
+    assert cost.cost_gate([1.0, 1.01, 0.99], [1.01, 1.0, 1.02], 5).result == "PASS"
+    assert cost.cost_gate([1.0, 1.01, 0.99], [0.8, 1.3, 1.0], 5).result == "INCONCLUSIVE"
+
+
+FIX = Path(__file__).parent / "fixtures" / "cost_compare"
+
+
+@pytest.mark.parametrize(
+    ("candidate", "code", "verdict"),
+    [
+        ("candidate_same", 0, "PASS"),
+        ("candidate_20pct_slower", 1, "FAIL"),
+        ("candidate_noisy", 2, "INCONCLUSIVE"),
+    ],
+)
+def test_cost_compare_cli(candidate, code, verdict):
+    args = [
+        "cost-compare",
+        "--baseline",
+        str(FIX / "baseline"),
+        "--candidate",
+        str(FIX / candidate),
+        "--gpu",
+        "H100",
+        "--json",
+    ]
+    res = CliRunner().invoke(app, args)
+    assert res.exit_code == code, res.output
+    data = json.loads(res.output)
+    assert data["result"] == verdict and data["runs"] == [5, 5]
+    assert data["hourly_usd"] == pytest.approx(3.99)
+    if verdict == "FAIL":
+        assert data["change_percent"] == pytest.approx(20, abs=0.5)
+
+
+def test_cost_compare_needs_repetitions(tmp_path):
+    res = CliRunner().invoke(
+        app, ["cost-compare", "--baseline", str(tmp_path), "--candidate", str(tmp_path)]
+    )
+    assert res.exit_code == 3
 
 
 def test_cli_demo():

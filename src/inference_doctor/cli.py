@@ -440,17 +440,23 @@ def cost_command(
 
 @app.command(
     name="cost-compare",
-    help="(Experimental) Cost-regression gate: FAIL when the candidate's median $/1M output "
-    "tokens rises more than --max-increase-pct over the baseline, at the same $/GPU-hour.",
+    help="(Experimental) Cost-regression gate on $/1M output tokens at a fixed $/GPU-hour. "
+    "Uses the same Welch interval as compare-runs: FAIL when the whole interval for the "
+    "increase is above --max-increase-pct, PASS when it is all at or below, else INCONCLUSIVE.",
 )
 def cost_compare_command(
     baseline: Path = typer.Option(..., "--baseline"),
     candidate: Path = typer.Option(..., "--candidate"),
     gpu: str = typer.Option("H100-SXM", "--gpu"),
     gpus: int = typer.Option(1, "--gpus"),
-    price: float | None = typer.Option(None, "--price"),
+    price: float | None = typer.Option(None, "--price", help="$/GPU-hour you pay."),
     max_increase_pct: float = typer.Option(5.0, "--max-increase-pct"),
+    confidence: float = typer.Option(0.9, "--confidence"),
+    min_repetitions: int = typer.Option(3, "--min-repetitions"),
+    as_json: bool = typer.Option(False, "--json"),
 ) -> None:
+    import json as _json
+
     from inference_doctor import cost as costmod
 
     try:
@@ -459,17 +465,28 @@ def cost_compare_command(
         def per_m(d: Path) -> list[float]:
             raw = [r.result.metrics.output_token_throughput for r in load_directory(d).records]
             vals = [v for v in raw if v]
-            if not vals:
-                raise ValueError(f"No output token throughput in '{d}'")
+            if len(vals) < min_repetitions:
+                raise ValueError(
+                    f"'{d}' has {len(vals)} runs with output token throughput; "
+                    f"need {min_repetitions}"
+                )
             return [hourly / (v * 3600 / 1e6) for v in vals]
 
-        verdict, change = costmod.cost_gate(per_m(baseline), per_m(candidate), max_increase_pct)
+        gate = costmod.cost_gate(per_m(baseline), per_m(candidate), max_increase_pct, confidence)
     except (ValueError, OSError, BenchmarkResultError) as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(EXIT_ERROR) from exc
-    typer.echo(
-        f"{verdict}: median $/1M output tokens changed {change:+.1f}% "
-        f"(limit +{max_increase_pct:g}%)"
-    )
-    if verdict == "FAIL":
+    if as_json:
+        typer.echo(_json.dumps({**gate.to_dict(), "hourly_usd": hourly}, indent=2))
+    else:
+        typer.echo(
+            f"{gate.result}: $/1M output tokens {gate.baseline_mean:.4f} -> "
+            f"{gate.candidate_mean:.4f} ({gate.change_percent:+.1f}%, "
+            f"{gate.confidence:.0%} interval {gate.change_percent_low:+.1f}% to "
+            f"{gate.change_percent_high:+.1f}%; limit +{max_increase_pct:g}%) "
+            f"at ${hourly:.2f}/h"
+        )
+    if gate.result == "FAIL":
         raise typer.Exit(EXIT_FAIL)
+    if gate.result == "INCONCLUSIVE":
+        raise typer.Exit(EXIT_NO_DECISION)
