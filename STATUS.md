@@ -1,6 +1,6 @@
 # Status
 
-October 11, 2026. inference-doctor 0.4.1 (`pip install inference-doctor`; the Action as
+October 31, 2026. inference-doctor 0.5.0 (`pip install inference-doctor`; the Action as
 `dundysm/inference-doctor@v1`). See the [README](README.md) for what the tool does.
 
 ## What works

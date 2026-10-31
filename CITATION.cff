@@ -8,8 +8,8 @@ authors:
 repository-code: "https://github.com/dundysm/inference-doctor"
 url: "https://github.com/dundysm/inference-doctor"
 license: Apache-2.0
-version: 0.4.1
-date-released: "2026-10-11"
+version: 0.5.0
+date-released: 2026-10-31
 keywords:
   - LLM inference
   - benchmarking

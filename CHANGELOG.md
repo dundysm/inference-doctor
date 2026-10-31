@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## 0.5.0 - unreleased
+## 0.5.0 - 2026-10-31
 
 ### Added: cost (experimental)
 
