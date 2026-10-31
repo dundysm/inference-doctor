@@ -1,0 +1,11 @@
+{
+  "_note": "Serverless API list prices in USD per 1M tokens, copied from the cited page on 2026-10-31.",
+  "sources": {"together": {"url": "https://www.together.ai/pricing#serverless-inference", "retrieved": "2026-10-31"}},
+  "models": {
+    "gpt-oss-120b":            {"provider": "together", "input": 0.15, "output": 0.60, "label": "gpt-oss-120B (Together)"},
+    "qwen3-235b-a22b-fp8":     {"provider": "together", "input": 0.20, "output": 0.60, "label": "Qwen3 235B A22B Instruct 2507 FP8 Throughput (Together)"},
+    "qwen2.5-7b":              {"provider": "together", "input": 0.30, "output": 0.30, "label": "Qwen2.5 7B Instruct Turbo (Together)"},
+    "llama-3-8b":              {"provider": "together", "input": 0.14, "output": 0.14, "label": "Llama 3 8B Instruct Lite (Together)"},
+    "qwen3.5-9b":              {"provider": "together", "input": 0.17, "output": 0.25, "label": "Qwen3.5 9B (Together)"}
+  }
+}

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 0.5.0 - unreleased
+
+### Added: cost (experimental)
+
+- `inference-doctor cost` reports $/1M tokens (all and output), monthly cost, occupancy, an estimate of $ spent on idle capacity, and ranked fixes (hosted API, right-size, raise `--max-num-seqs`, switch GPU, FP8, prefix caching). Inputs: two Prometheus scrapes of vLLM (V0 and V1 names) or SGLang, optionally with DCGM GPU utilization; a live `--url`; or a benchmark directory. `--demo` runs on bundled scrapes with no GPU. `--json` for machines.
+- `inference-doctor cost-compare` gates $/1M output tokens at a fixed $/GPU-hour with the Welch log-ratio interval `compare-runs` uses: `FAIL` when the whole interval for the increase is above `--max-increase-pct` (5), `PASS` when it is all at or below, otherwise `INCONCLUSIVE`. Same exit codes.
+- Action inputs `cost-gpu`, `cost-gpus`, `cost-price`, `cost-max-increase-percent` turn on the cost gate, which adds a job-summary section and outputs `cost-result` and `cost-change-percent`. Off by default; existing workflows are unchanged.
+- GPU and API list prices ship in `data/gpu_prices.json` and `data/api_prices.json` with source URLs and the retrieval date (2026-10-31). `--price` overrides them. Relative GPU throughput used for "switch GPU" is an assumption and is labelled one.
+- `docs/cost.md` separates what is measured from what is heuristic.
+- Checked against real vLLM 0.32.0 scrapes (Qwen2.5-0.5B on an RTX A5000), now a test fixture. Two `--metrics` files without `--seconds` use the files' modification times as the window; an unlisted GPU works with `--price`.
+
 ## 0.4.1 - 2026-10-11
 
 - Community files: `SECURITY.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`, `CITATION.cff`, bug-report and format-request issue forms, an issue-template config and a pull request template. `CONTRIBUTING.md` is rewritten around ways to help, where things are, and how to add a format.

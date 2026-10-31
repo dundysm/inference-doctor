@@ -49,6 +49,22 @@ inputs:
     description: Optional ceiling on each side's coefficient of variation; empty means no ceiling
     required: false
     default: ""
+  cost-gpu:
+    description: (Experimental) Enables the cost gate. GPU type for list pricing (e.g. H100-SXM, A100-80G, L40S); see docs/cost.md
+    required: false
+    default: ""
+  cost-gpus:
+    description: Number of GPUs serving one benchmark run
+    required: false
+    default: "1"
+  cost-price:
+    description: (Experimental) $/GPU-hour you actually pay; enables the cost gate and overrides the list price
+    required: false
+    default: ""
+  cost-max-increase-percent:
+    description: Cost gate FAILs when the whole interval for the $/1M output-token increase is above this
+    required: false
+    default: "5"
 
 outputs:
   result:
@@ -75,6 +91,12 @@ outputs:
   report:
     description: Path to the full JSON report
     value: ${{ steps.report.outputs.report }}
+  cost-result:
+    description: Cost gate PASS, FAIL, INCONCLUSIVE, ERROR, or empty when the cost gate is off
+    value: ${{ steps.cost.outputs.result }}
+  cost-change-percent:
+    description: Change in mean $/1M output tokens, candidate versus baseline
+    value: ${{ steps.cost.outputs.change_percent }}
   candidate-cv:
     description: Candidate coefficient of variation percentage (the first metric when several are given)
     value: ${{ steps.report.outputs.candidate_cv }}
@@ -255,8 +277,71 @@ runs:
         set_output("candidate_cv", first["candidate"]["cv_percent"])
         PY
 
+    - name: Cost gate (experimental)
+      id: cost
+      if: inputs['cost-gpu'] != '' || inputs['cost-price'] != ''
+      shell: bash
+      env:
+        INPUT_BASELINE: ${{ inputs.baseline }}
+        INPUT_CANDIDATE: ${{ inputs.candidate }}
+        INPUT_CONFIDENCE: ${{ inputs.confidence }}
+        INPUT_MIN_REPETITIONS: ${{ inputs['min-repetitions'] }}
+        INPUT_COST_GPU: ${{ inputs['cost-gpu'] }}
+        INPUT_COST_GPUS: ${{ inputs['cost-gpus'] }}
+        INPUT_COST_PRICE: ${{ inputs['cost-price'] }}
+        INPUT_COST_MAX: ${{ inputs['cost-max-increase-percent'] }}
+        TYPER_USE_RICH: "0"
+        ID_BIN: ${{ steps.install.outputs.bin }}
+      run: |
+        args=(cost-compare --baseline "$INPUT_BASELINE" --candidate "$INPUT_CANDIDATE"
+          --gpus "$INPUT_COST_GPUS" --max-increase-pct "$INPUT_COST_MAX"
+          --confidence "$INPUT_CONFIDENCE" --min-repetitions "$INPUT_MIN_REPETITIONS" --json)
+        if [ -n "$INPUT_COST_GPU" ]; then args+=(--gpu "$INPUT_COST_GPU"); fi
+        if [ -n "$INPUT_COST_PRICE" ]; then args+=(--price "$INPUT_COST_PRICE"); fi
+        set +e
+        "$ID_BIN/inference-doctor" "${args[@]}" \
+          > "$RUNNER_TEMP/inference-doctor-cost.json" \
+          2> "$RUNNER_TEMP/inference-doctor-cost-error.txt"
+        status=$?
+        set -e
+        echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+        "$ID_BIN/python" - <<'PY'
+        import json
+        import os
+        from pathlib import Path
+
+        temp = Path(os.environ["RUNNER_TEMP"])
+        out = temp / "inference-doctor-cost.json"
+        text = out.read_text(encoding="utf-8").strip() if out.exists() else ""
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary, open(
+            os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8"
+        ) as outputs:
+            summary.write("\n## Inference Doctor: cost gate (experimental)\n\n")
+            if not text:
+                err = (temp / "inference-doctor-cost-error.txt").read_text(encoding="utf-8").strip()
+                summary.write(f"**Result:** `ERROR`\n\n```text\n{err}\n```\n")
+                outputs.write("result=ERROR\nchange_percent=\n")
+                raise SystemExit(0)
+            r = json.loads(text)
+            summary.write(
+                f"**Result:** `{r['result']}`\n\n"
+                "| Runs | Baseline $/1M out | Candidate $/1M out | Change | "
+                f"{r['confidence']:.0%} interval | Limit | $/hour |\n"
+                "| ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n"
+                f"| {r['runs'][0]} / {r['runs'][1]} | {r['baseline_mean']:.4f} | "
+                f"{r['candidate_mean']:.4f} | {r['change_percent']:+.2f}% | "
+                f"{r['change_percent_low']:+.2f}% to {r['change_percent_high']:+.2f}% | "
+                f"+{r['max_increase_percent']:g}% | {r['hourly_usd']:.2f} |\n\n"
+                "Cost = $/hour / measured output tokens per hour, at the same hardware on both sides.\n"
+            )
+            outputs.write(f"result={r['result']}\nchange_percent={r['change_percent']}\n")
+        PY
+
     - name: Enforce gate
       shell: bash
       env:
         EXIT_CODE: ${{ steps.compare.outputs.exit_code }}
-      run: exit "$EXIT_CODE"
+        COST_EXIT_CODE: ${{ steps.cost.outputs.exit_code }}
+      run: |
+        if [ "$EXIT_CODE" != "0" ]; then exit "$EXIT_CODE"; fi
+        exit "${COST_EXIT_CODE:-0}"

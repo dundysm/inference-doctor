@@ -28,7 +28,7 @@ import typer
 from typer.core import TyperGroup
 
 from inference_doctor import __version__
-from inference_doctor.adapters import FORMATS, SourceOptions
+from inference_doctor.adapters import FORMATS, SourceOptions, load_directory
 from inference_doctor.benchmark_results import (
     BenchmarkResultError,
     ensure_comparable,
@@ -375,3 +375,123 @@ def compare_runs_command(
 
 if __name__ == "__main__":
     app()
+
+
+@app.command(
+    name="cost",
+    help="(Experimental) Turn vLLM/SGLang Prometheus scrapes or benchmark results into "
+    "$/1M tokens, estimated $ wasted, and ranked fixes. --demo runs on bundled samples.",
+)
+def cost_command(
+    metrics: list[Path] = typer.Option(
+        [], "--metrics", help="Saved /metrics scrape(s); give two for a measured window."
+    ),
+    url: str | None = typer.Option(None, "--url", help="Live /metrics URL; scraped twice."),
+    runs: Path | None = typer.Option(None, "--runs", help="Directory of benchmark results."),
+    seconds: float | None = typer.Option(None, "--seconds", help="Window or uptime in seconds."),
+    gpu: str = typer.Option("H100-SXM", "--gpu", help="GPU type from the price table."),
+    gpus: int = typer.Option(1, "--gpus", help="GPU count."),
+    price: float | None = typer.Option(None, "--price", help="Your $/GPU-hour (overrides table)."),
+    provider: str | None = typer.Option(None, "--provider", help="Price table column."),
+    max_num_seqs: int = typer.Option(256, "--max-num-seqs", help="Server's --max-num-seqs."),
+    replicas: int = typer.Option(1, "--replicas", help="Engine replicas behind the metrics."),
+    tp: int = typer.Option(1, "--tp", help="Tensor-parallel size (right-size rounds to it)."),
+    api_model: str | None = typer.Option(None, "--api-model", help="Hosted API to compare."),
+    demo: bool = typer.Option(False, "--demo", help="Use bundled sample metrics."),
+    json_output: bool = typer.Option(False, "--json"),
+) -> None:
+    import time
+    from importlib import resources
+
+    from inference_doctor import cost as costmod
+    from inference_doctor import cost_metrics as cm
+
+    try:
+        if demo:
+            base = resources.files("inference_doctor").joinpath("data", "cost_demo")
+            texts = [base.joinpath(n).read_text() for n in ("vllm-t0.prom", "vllm-t1.prom")]
+            gpu, gpus, replicas, tp = "H100-SXM", 8, 4, 2
+            api_model = api_model or "gpt-oss-120b"
+        elif url:
+            first = cm.fetch(url)
+            time.sleep(seconds or 30)
+            texts = [first, cm.fetch(url)]
+            seconds = seconds or 30
+        else:
+            texts = [p.read_text() for p in metrics]
+        if runs is not None:
+            loaded = load_directory(runs)
+            usage = costmod.usage_from_benchmarks([r.result for r in loaded.records])
+        elif texts:
+            snaps = [cm.snapshot_from_text(t) for t in texts[:2]]
+            if metrics and len(snaps) == 2 and seconds is None:
+                # Plain /metrics has no scrape time; fall back to when each file was written.
+                for snap, path in zip(snaps, metrics[:2], strict=True):
+                    if snap.timestamp is None:
+                        snap.timestamp = path.stat().st_mtime
+            usage = costmod.usage_from_window(
+                cm.window(snaps[0], snaps[1] if len(snaps) > 1 else None, seconds)
+            )
+        else:
+            raise ValueError("Give --metrics, --url, --runs or --demo")
+        report = costmod.analyze(
+            usage, gpu, gpus, price, provider, max_num_seqs, replicas, tp, api_model
+        )
+    except (ValueError, OSError, BenchmarkResultError) as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(EXIT_ERROR) from exc
+    typer.echo(json.dumps(report.to_dict(), indent=2) if json_output else costmod.render(report))
+
+
+@app.command(
+    name="cost-compare",
+    help="(Experimental) Cost-regression gate on $/1M output tokens at a fixed $/GPU-hour. "
+    "Uses the same Welch interval as compare-runs: FAIL when the whole interval for the "
+    "increase is above --max-increase-pct, PASS when it is all at or below, else INCONCLUSIVE.",
+)
+def cost_compare_command(
+    baseline: Path = typer.Option(..., "--baseline"),
+    candidate: Path = typer.Option(..., "--candidate"),
+    gpu: str = typer.Option("H100-SXM", "--gpu"),
+    gpus: int = typer.Option(1, "--gpus"),
+    price: float | None = typer.Option(None, "--price", help="$/GPU-hour you pay."),
+    max_increase_pct: float = typer.Option(5.0, "--max-increase-pct"),
+    confidence: float = typer.Option(0.9, "--confidence"),
+    min_repetitions: int = typer.Option(3, "--min-repetitions"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    import json as _json
+
+    from inference_doctor import cost as costmod
+
+    try:
+        hourly = (price if price is not None else costmod.list_price(gpu)[0]) * gpus
+
+        def per_m(d: Path) -> list[float]:
+            raw = [r.result.metrics.output_token_throughput for r in load_directory(d).records]
+            vals = [v for v in raw if v]
+            if len(vals) < min_repetitions:
+                raise ValueError(
+                    f"'{d}' has {len(vals)} runs with output token throughput; "
+                    f"need {min_repetitions}"
+                )
+            return [hourly / (v * 3600 / 1e6) for v in vals]
+
+        gate = costmod.cost_gate(per_m(baseline), per_m(candidate), max_increase_pct, confidence)
+    except (ValueError, OSError, BenchmarkResultError) as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(EXIT_ERROR) from exc
+    if as_json:
+        typer.echo(_json.dumps({**gate.to_dict(), "hourly_usd": hourly}, indent=2))
+    else:
+        typer.echo(
+            f"{gate.result}: $/1M output tokens {gate.baseline_mean:.4f} -> "
+            f"{gate.candidate_mean:.4f} ({gate.change_percent:+.1f}%, "
+            f"{gate.confidence:.0%} interval {gate.change_percent_low:+.1f}% to "
+            f"{gate.change_percent_high:+.1f}%; limit +{max_increase_pct:g}%) "
+            f"at ${hourly:.2f}/h"
+        )
+    if gate.result == "FAIL":
+        raise typer.Exit(EXIT_FAIL)
+    if gate.result == "INCONCLUSIVE":
+        raise typer.Exit(EXIT_NO_DECISION)

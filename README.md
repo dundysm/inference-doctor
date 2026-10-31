@@ -120,6 +120,35 @@ them as outputs. `FAIL`, `INCONCLUSIVE` and errors fail the step, so noisy evide
 approve a change. inference-doctor does not provision GPUs or run the benchmark. See
 [GitHub Actions](docs/github-actions.md).
 
+## What it costs (experimental)
+
+`inference-doctor cost` turns the same numbers into dollars: $/1M tokens, an estimate of
+money spent on idle capacity, and ranked fixes. Try it with no GPU:
+
+```
+pip install inference-doctor
+inference-doctor cost --demo
+```
+
+```
+  hardware          8 x H100-SXM @ $3.99/GPU-h (https://www.runpod.io/pricing)
+  throughput        5,200 prompt + 1,300 output tok/s   [measured]
+  cost / 1M tokens  $1.364 all, $6.821 output
+  occupancy         22%  (batch slots / KV cache, max of the two)
+  est. $ wasted/mo  $16,894  [heuristic: idle capacity below 80% occupancy]
+Ranked fixes (estimated monthly savings):
+  1. Use a hosted API: gpt-oss-120B (Together)  ~$19,202/mo  [measured traffic x list price]
+  2. Right-size: 8 -> 4 GPUs                    ~$11,651/mo  [heuristic]
+  ...
+```
+
+Point it at two Prometheus scrapes of vLLM or SGLang (`--metrics a.prom --metrics b.prom`),
+a live `--url`, or a benchmark directory (`--runs`), with `--gpu`/`--gpus` or the `--price`
+you actually pay. Throughput and cache gauges are measured; waste and savings are
+heuristics, labelled as such. `cost-compare` gates $/1M output tokens with the same
+Welch interval as `compare-runs`, and the Action runs it when you set `cost-gpu` or
+`cost-price`. Prices are list prices copied with sources and a date; see [cost](docs/cost.md).
+
 ## How much to trust it
 
 Simulated with known truth, at default settings, from
@@ -143,6 +172,8 @@ to stay close to that.
 | --- | --- |
 | `compare-runs` | The gate: repeated baseline and candidate runs, one or more metrics, `PASS`, `FAIL` or `INCONCLUSIVE`. |
 | `compare` | Deprecated. One normalized file against another, every metric. A single run per side cannot measure noise; use `compare-runs`. See [upgrade guard](docs/upgrade-guard.md). |
+| `cost` | Experimental. $/1M tokens, estimated idle-capacity $ and ranked fixes from Prometheus scrapes or benchmark results. `--demo` runs on bundled data. See [cost](docs/cost.md). |
+| `cost-compare` | Experimental. The gate on $/1M output tokens at a fixed $/GPU-hour: `PASS`, `FAIL` or `INCONCLUSIVE`. |
 | `diagnose` | Experimental. Reads a live vLLM server's Prometheus metrics and reports queue, prefill, decode and KV-cache pressure. Read-only. Exits 1 on a critical finding (`--fail-on` changes that). See [example reports](docs/example-reports.md). |
 
 `compare-runs` options: `--metric` (repeatable), `--regression-percent` (10), `--confidence` (0.90),
