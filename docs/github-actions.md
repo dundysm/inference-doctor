@@ -95,7 +95,8 @@ A simple threshold can produce false confidence when benchmark variance is high.
 ## Cost gate (experimental)
 
 Add `cost-gpu` (list price) or `cost-price` (what you pay per GPU-hour) to also gate
-$/1M output tokens; see [cost](cost.md).
+$/1M output tokens; see [cost](cost.md). The cost inputs arrived in 0.5.0 and the `v1`
+tag still points at 0.4.x, so use `dundysm/inference-doctor@v0.5.0` for them.
 
 ```yaml
   with:
