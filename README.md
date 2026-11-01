@@ -6,11 +6,22 @@
   <a href="https://pypi.org/project/inference-doctor/"><img alt="PyPI" src="https://img.shields.io/pypi/v/inference-doctor?color=3776ab"></a>
   <a href="https://github.com/dundysm/inference-doctor/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dundysm/inference-doctor/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776ab">
-  <img alt="Reads vLLM, AIPerf, GuideLLM and SGLang" src="https://img.shields.io/badge/reads-vLLM%2C%20AIPerf%2C%20GuideLLM%2C%20SGLang-1f6feb">
+  <img alt="Reads vLLM, SGLang, AIPerf, GuideLLM and Prometheus" src="https://img.shields.io/badge/reads-vLLM%2C%20SGLang%2C%20AIPerf%2C%20GuideLLM%2C%20Prometheus-1f6feb">
   <a href="https://github.com/dundysm/inference-doctor/blob/main/LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-2ea043"></a>
   <a href="https://github.com/dundysm/inference-doctor/blob/main/STATUS.md"><img alt="Status: early" src="https://img.shields.io/badge/status-early-d29922"></a>
   <a href="https://github.com/dundysm/inference-doctor/blob/main/CONTRIBUTING.md"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-2ea043"></a>
 </p>
+
+**What does your self-hosted LLM actually cost per token, and did this change make it slower or pricier?**
+inference-doctor is an open-source, framework-neutral doctor for LLM serving: it reads the
+benchmark files and Prometheus `/metrics` your stack already produces (vLLM, SGLang,
+TensorRT-LLM via AIPerf, NVIDIA Dynamo, GuideLLM) and answers with `PASS`, `FAIL` or
+`INCONCLUSIVE`, plus $/1M tokens, a comparison with hosted API list prices, and a CI gate
+for performance and cost regressions.
+
+It is for teams running their own inference on GPUs who want two things from CI: catch
+real slowdowns and cost increases before they merge, and stop false alarms from noisy
+benchmarks.
 
 A pull request can pass every test and still make inference slower. Putting a benchmark
 in CI is the obvious fix, and it goes wrong in three ways:
@@ -24,7 +35,60 @@ in CI is the obvious fix, and it goes wrong in three ways:
 
 inference-doctor compares repeated baseline and candidate runs and returns `PASS` or
 `FAIL` only when the data can support it. Otherwise it returns `INCONCLUSIVE` and says
-why. It reads the files `vllm bench serve`, AIPerf, GuideLLM and SGLang already write.
+why.
+
+## Features
+
+* **Regression gate** (`compare-runs`): Welch confidence interval on repeated runs,
+  validity checks first, `PASS` / `FAIL` / `INCONCLUSIVE`, exit codes 0 / 1 / 2 / 3.
+* **Cost per token** (`cost`, new in 0.5.0): $/1M tokens, monthly cost, occupancy,
+  estimated idle-capacity spend and ranked fixes, from two Prometheus scrapes, a live
+  `--url` or benchmark results. GPU list prices (RunPod) and API list prices (Together)
+  ship with sources and dates; `--price` overrides them.
+* **Cost gate** (`cost-compare`, new in 0.5.0): the same interval applied to $/1M output
+  tokens, so a change that costs more per token fails CI.
+* **GitHub Action**: job summary, outputs, and optional cost inputs.
+* **Live diagnosis** (`diagnose`, experimental): queue, prefill, decode and KV-cache
+  pressure from a running vLLM server.
+
+## 60-second cost check
+
+```bash
+pip install inference-doctor
+git clone https://github.com/dundysm/inference-doctor.git && cd inference-doctor
+inference-doctor cost \
+  --metrics tests/fixtures/real_vllm_0_32/t0.prom \
+  --metrics tests/fixtures/real_vllm_0_32/t1.prom \
+  --seconds 60 --gpu A5000 --price 0.27
+```
+
+Real output on two real `/metrics` scrapes from vLLM 0.32.0 serving Qwen2.5-0.5B-Instruct
+on one RTX A5000 under 32 concurrent requests:
+
+```
+inference-doctor cost (experimental)
+  source            prometheus (vllm, 60 s window)
+  hardware          1 x A5000 @ $0.27/GPU-h (user supplied (--price))
+  throughput        13,719 prompt + 4,240 output tok/s   [measured]
+  cost / 1M tokens  $0.004 all, $0.018 output
+  monthly cost      $197  (730 h)
+  occupancy         7%  (batch slots / KV cache, max of the two)
+  KV cache usage    0%   queue 0.0   GPU util (DCGM) n/a
+  est. $ wasted/mo  $181  [heuristic: idle capacity below 80% occupancy]
+```
+
+Against your own server, scrape `/metrics` twice (or pass `--url`). See [cost](docs/cost.md)
+for what is measured and what is heuristic.
+
+## Supported stacks
+
+| Stack | How it is read |
+| --- | --- |
+| vLLM | `vllm bench serve` results; Prometheus `/metrics` (V0 and V1 names) for `cost` and `diagnose` |
+| SGLang | `bench_serving` `.jsonl`; Prometheus `/metrics` for `cost` |
+| TensorRT-LLM, NVIDIA Dynamo, Triton | NVIDIA AIPerf / GenAI-Perf `profile_export_aiperf.json` |
+| any OpenAI-compatible server | GuideLLM `benchmarks.json` |
+| anything else | the small [normalized format](docs/benchmark-format.md) |
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/dundysm/inference-doctor/main/docs/assets/terminal.svg" alt="Terminal output of inference-doctor compare-runs on a real H100 run: six runs per side, throughput 4.19% lower, 90% confidence interval for the regression -3.33% to +11.17%, which contains the 10% threshold, so the result is INCONCLUSIVE." width="860">
@@ -52,7 +116,7 @@ why. It reads the files `vllm bench serve`, AIPerf, GuideLLM and SGLang already 
 Outliers are flagged but never removed: a bad run widens the interval instead of being
 hidden. Details and references: [measurement quality](docs/measurement-quality.md).
 
-## Quick start
+## Quick start: the regression gate
 
 Python 3.11 or newer. No GPU: the example results are checked in, so the clone is only for
 them.
@@ -113,11 +177,15 @@ Run your benchmark on your own GPU runner, then gate on the results:
     candidate: results/my-branch
     metric: output_token_throughput, ttft_p99_ms
     min-repetitions: "5"
+    # optional cost gate on $/1M output tokens (needs @v0.5.0 or later):
+    cost-gpu: H100-SXM
+    cost-max-increase-percent: "5"
 ```
 
 The Action writes a job summary with the verdict, the interval and the reason, and exposes
 them as outputs. `FAIL`, `INCONCLUSIVE` and errors fail the step, so noisy evidence cannot
-approve a change. inference-doctor does not provision GPUs or run the benchmark. See
+approve a change. The cost inputs are in `@v0.5.0`; the `v1` tag still points at 0.4.x,
+so pin `dundysm/inference-doctor@v0.5.0` to use them. inference-doctor does not provision GPUs or run the benchmark. See
 [GitHub Actions](docs/github-actions.md).
 
 ## What it costs (experimental)
