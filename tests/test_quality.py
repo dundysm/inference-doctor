@@ -12,6 +12,7 @@ from inference_doctor.quality import (
     QualityThresholds,
     compare_repeated_runs,
 )
+from inference_doctor.quality_report import render_markdown
 
 runner = CliRunner()
 
@@ -204,6 +205,58 @@ def test_cli_inconclusive_exit_code(tmp_path):
     )
     assert result.exit_code == 2
     assert "RESULT: INCONCLUSIVE" in result.output
+
+
+def test_markdown_report_for_one_metric_and_cli(tmp_path):
+    baseline = tmp_path / "baseline"
+    candidate = tmp_path / "candidate"
+    _write_runs(baseline, [100] * 3, "0.19.0")
+    _write_runs(candidate, [88] * 3, "0.21.0")
+    result = runner.invoke(
+        app,
+        [
+            "compare-runs",
+            "--baseline",
+            str(baseline),
+            "--candidate",
+            str(candidate),
+            "--metric",
+            "texts_per_second",
+            "--markdown",
+        ],
+    )
+    assert result.exit_code == 1
+    assert result.output.startswith("## Inference Doctor\n\n**Result:** `FAIL`\n")
+    assert "| `texts_per_second` | 3 / 3 | 100.00 | 88.00 | -12.00% |" in result.output
+
+
+def test_markdown_inconclusive_includes_reasons():
+    report = compare_repeated_runs(
+        _runs([100, 130, 85, 100, 120, 90]),
+        _runs([95] * 6, version="0.21.0"),
+        metric="texts_per_second",
+    )
+    markdown = render_markdown(report)
+    assert "**Result:** `INCONCLUSIVE`" in markdown
+    assert "**Why:**\n- " in markdown
+    assert "No merge recommendation was made" in markdown
+
+
+def test_json_and_markdown_are_mutually_exclusive(tmp_path):
+    result = runner.invoke(
+        app,
+        [
+            "compare-runs",
+            "--baseline",
+            str(tmp_path),
+            "--candidate",
+            str(tmp_path),
+            "--json",
+            "--markdown",
+        ],
+    )
+    assert result.exit_code == 3
+    assert "cannot be used together" in result.output
 
 
 def test_telemetry_failure_is_recorded_as_unavailable(monkeypatch):

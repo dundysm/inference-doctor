@@ -187,6 +187,8 @@ runs:
         import os
         from pathlib import Path
 
+        from inference_doctor.quality_report import render_markdown
+
         temp = Path(os.environ["RUNNER_TEMP"])
         report_path = temp / "inference-doctor-report.json"
         error_path = temp / "inference-doctor-error.txt"
@@ -218,52 +220,8 @@ runs:
         report = json.loads(report_path.read_text(encoding="utf-8"))
         comparisons = report.get("comparisons", [report])
         first = comparisons[0]
-        thresholds = report["thresholds"]
-
-        def fmt(value, suffix=""):
-            return "unavailable" if value is None else f"{value:.2f}{suffix}"
-
-        def signed(value):
-            return "unavailable" if value is None else f"{value:+.2f}%"
-
-        def interval_text(comparison):
-            interval = comparison["confidence_interval"]
-            if not interval["available"]:
-                return "unavailable"
-            return f"{signed(interval['regression_percent_low'])} to {signed(interval['regression_percent_high'])}"
-
-        lines = [
-            "## Inference Doctor",
-            "",
-            f"**Result:** `{report['result']}`",
-            "",
-            f"| Metric | Runs | Baseline mean | Candidate mean | Delta | Regression, {thresholds['confidence']:.0%} interval | Result |",
-            "| --- | ---: | ---: | ---: | ---: | ---: | --- |",
-        ]
-        for comparison in comparisons:
-            lines.append(
-                f"| `{comparison['metric']}` | {comparison['baseline']['count']} / {comparison['candidate']['count']} "
-                f"| {fmt(comparison['baseline']['mean'])} | {fmt(comparison['candidate']['mean'])} "
-                f"| {signed(comparison['delta_percent'])} | {interval_text(comparison)} | `{comparison['result']}` |"
-            )
-        lines += [
-            "",
-            f"Regression is positive when worse. Threshold: `{thresholds['regression_percent']:g}%`. "
-            f"Minimum repetitions: `{thresholds['min_repetitions']}`.",
-        ]
-
-        if report["reasons"]:
-            lines += ["", "**Why:**"] + [f"- {reason}" for reason in report["reasons"]]
-        elif report["explanation"]:
-            lines += ["", f"**Why:** {report['explanation']}."]
-        for note in report.get("notes", []):
-            lines += ["", f"**Note:** {note}."]
-
-        if report["result"] == "INCONCLUSIVE":
-            lines += ["", "No merge recommendation was made because the measurement was not trustworthy enough."]
-
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
-            handle.write("\n".join(lines) + "\n")
+            handle.write(render_markdown(report))
 
         interval = first["confidence_interval"]
         set_output("result", report["result"])

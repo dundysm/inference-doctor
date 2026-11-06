@@ -147,6 +147,8 @@ inference-doctor compare-runs \
 
 Repeat `--metric` to gate on several at once: the result is `FAIL` if any metric fails,
 `INCONCLUSIVE` if none fails but one cannot be decided, and `PASS` only when all pass.
+Add `--markdown` to print the same pasteable table used in the GitHub Action job summary;
+the usual PASS/FAIL/INCONCLUSIVE exit code is unchanged.
 
 | Tool | What it reads |
 | --- | --- |
@@ -246,7 +248,7 @@ to stay close to that.
 
 `compare-runs` options: `--metric` (repeatable), `--regression-percent` (10), `--confidence` (0.90),
 `--min-repetitions` (3), `--stability-cv-percent` (an optional CV ceiling, off),
-`--format` (auto), `--gpu`, `--model`, `--guidellm-benchmark` and `--json`.
+`--format` (auto), `--gpu`, `--model`, `--guidellm-benchmark`, `--json` and `--markdown`.
 
 **Exit codes**, the same for every command: `0` PASS, `1` FAIL (for `diagnose`, a
 finding at or above `--fail-on`), `2` INCONCLUSIVE (or UNSTABLE for `compare`), `3` error

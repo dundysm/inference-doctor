@@ -16,6 +16,53 @@ def _signed(value: float | None) -> str:
 STYLES = {"PASS": "green", "FAIL": "red", "INCONCLUSIVE": "yellow"}
 
 
+def render_markdown(report: dict) -> str:
+    """Render the compare-runs report as a pasteable Markdown table."""
+    comparisons = report.get("comparisons", [report])
+    thresholds = report["thresholds"]
+
+    def interval_text(comparison: dict) -> str:
+        interval = comparison["confidence_interval"]
+        if not interval["available"]:
+            return "unavailable"
+        return (
+            f"{_signed(interval['regression_percent_low'])} to "
+            f"{_signed(interval['regression_percent_high'])}"
+        )
+
+    lines = [
+        "## Inference Doctor",
+        "",
+        f"**Result:** `{report['result']}`",
+        "",
+        f"| Metric | Runs | Baseline mean | Candidate mean | Delta | Regression, {thresholds['confidence']:.0%} interval | Result |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | --- |",
+    ]
+    for comparison in comparisons:
+        lines.append(
+            f"| `{comparison['metric']}` | {comparison['baseline']['count']} / {comparison['candidate']['count']} "
+            f"| {_number(comparison['baseline']['mean'])} | {_number(comparison['candidate']['mean'])} "
+            f"| {_signed(comparison['delta_percent'])} | {interval_text(comparison)} | `{comparison['result']}` |"
+        )
+    lines += [
+        "",
+        f"Regression is positive when worse. Threshold: `{thresholds['regression_percent']:g}%`. "
+        f"Minimum repetitions: `{thresholds['min_repetitions']}`.",
+    ]
+    if report["reasons"]:
+        lines += ["", "**Why:**"] + [f"- {reason}" for reason in report["reasons"]]
+    elif report["explanation"]:
+        lines += ["", f"**Why:** {report['explanation']}."]
+    for note in report.get("notes", []):
+        lines += ["", f"**Note:** {note}."]
+    if report["result"] == "INCONCLUSIVE":
+        lines += [
+            "",
+            "No merge recommendation was made because the measurement was not trustworthy enough.",
+        ]
+    return "\n".join(lines) + "\n"
+
+
 def render_quality_report(report: dict, console: Console | None = None) -> None:
     console = console or Console()
     if "comparisons" in report:
