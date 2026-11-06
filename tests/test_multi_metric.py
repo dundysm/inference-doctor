@@ -14,6 +14,7 @@ from inference_doctor.quality import (
     combine_results,
     load_and_compare_directories,
 )
+from inference_doctor.quality_report import render_markdown
 
 runner = CliRunner()
 EXAMPLE = Path(__file__).parent.parent / "examples" / "vllm-bench-serve"
@@ -53,6 +54,19 @@ def test_several_metrics_report_each_and_combine():
     assert report["reasons"][0].startswith("ttft_p99_ms: the 90% confidence interval")
     assert any("2 metrics were checked" in note for note in report["notes"])
     assert report["input"]["baseline"]["format"] == "vllm"
+
+
+def test_markdown_report_has_one_row_per_metric():
+    report = load_and_compare_directories(
+        EXAMPLE / "baseline",
+        EXAMPLE / "candidate",
+        metric=["output_token_throughput", "ttft_p99_ms"],
+    )
+    markdown = render_markdown(report)
+    assert "**Result:** `FAIL`" in markdown
+    assert markdown.count("| `output_token_throughput` |") == 1
+    assert markdown.count("| `ttft_p99_ms` |") == 1
+    assert "| `ttft_p99_ms` |" in markdown and "| `FAIL` |" in markdown
 
 
 def test_unknown_metric_in_the_list_is_an_input_error():

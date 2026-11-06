@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `compare-runs --markdown` prints the GitHub Action's report table for pasting into a PR; the Action now uses the same renderer.
+
 ## 0.5.0 - 2026-10-31
 
 ### Added: cost (experimental)

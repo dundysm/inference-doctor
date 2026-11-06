@@ -48,7 +48,7 @@ from inference_doctor.quality import (
     load_and_compare_directories,
     metric_choices,
 )
-from inference_doctor.quality_report import render_quality_report
+from inference_doctor.quality_report import render_markdown, render_quality_report
 from inference_doctor.report import render_report
 
 EXIT_PASS = 0
@@ -345,7 +345,11 @@ def compare_runs_command(
         help="Which benchmark of a GuideLLM sweep to compare, by index.",
     ),
     json_output: bool = typer.Option(False, "--json"),
+    markdown: bool = typer.Option(False, "--markdown", help="Print a pasteable Markdown report."),
 ) -> None:
+    if json_output and markdown:
+        typer.echo("Error: --json and --markdown cannot be used together", err=True)
+        raise typer.Exit(EXIT_ERROR)
     try:
         report = load_and_compare_directories(
             baseline,
@@ -366,6 +370,8 @@ def compare_runs_command(
 
     if json_output:
         typer.echo(json.dumps(report, indent=2))
+    elif markdown:
+        typer.echo(render_markdown(report), nl=False)
     else:
         render_quality_report(report)
 
