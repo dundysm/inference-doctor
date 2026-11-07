@@ -8,9 +8,10 @@ Supported formats:
                 profile_export_genai_perf.json, which has the same layout
     guidellm    GuideLLM benchmarks.json; one benchmark of the sweep is selected
     sglang      SGLang bench_serving JSONL (one run per line)
+    llmperf     llmperf *_summary.json (one run per file)
 
 One file, or one line of a JSONL file, is one repetition. Field names were checked
-against each tool's source on the main branch in October 2026.
+against each tool's source on the main branch in October-November 2026.
 """
 
 from __future__ import annotations
@@ -32,7 +33,7 @@ from inference_doctor.benchmark_results import (
     parse_normalized_benchmark,
 )
 
-FORMATS = ("auto", "normalized", "vllm", "aiperf", "guidellm", "sglang")
+FORMATS = ("auto", "normalized", "vllm", "aiperf", "guidellm", "sglang", "llmperf")
 NORMALIZED_PATTERNS = ("normalized.json", "*.normalized.json", "repetition-*.json")
 UNSPECIFIED = "unspecified"
 
@@ -415,6 +416,74 @@ def _from_guidellm(record: dict[str, Any], options: SourceOptions) -> BenchmarkR
 
 
 # ---------------------------------------------------------------------------
+# llmperf: flattened results_* keys, with latency in seconds
+
+
+def _llmperf_latency(record: dict[str, Any], name: str) -> LatencyStats:
+    prefix = f"results_{name}_s_"
+
+    def milliseconds(suffix: str) -> float | None:
+        value = _number(record.get(prefix + suffix))
+        return None if value is None else value * 1000.0
+
+    return LatencyStats(
+        mean=milliseconds("mean"),
+        median=milliseconds("quantiles_p50"),
+        p95=milliseconds("quantiles_p95"),
+        p99=milliseconds("quantiles_p99"),
+    )
+
+
+def _from_llmperf(record: dict[str, Any], options: SourceOptions) -> BenchmarkResult:
+    # Source: https://github.com/ray-project/llmperf/blob/main/token_benchmark_ray.py
+    # LLMPerfResults.to_dict() flattens nested results and sampling parameters.
+    return BenchmarkResult(
+        schema_version="llmperf",
+        environment=_environment(gpu=None, model=record.get("model"), options=options),
+        benchmark_parameters=_parameters(
+            {
+                **{
+                    key: record.get(key)
+                    for key in (
+                        "mean_input_tokens",
+                        "stddev_input_tokens",
+                        "mean_output_tokens",
+                        "stddev_output_tokens",
+                        "num_concurrent_requests",
+                    )
+                },
+                **{
+                    key: value
+                    for key, value in record.items()
+                    if key.startswith("additional_sampling_params_")
+                },
+            }
+        ),
+        metrics=BenchmarkMetrics(
+            ttft_ms=_llmperf_latency(record, "ttft"),
+            # llmperf averages inter-token gaps per request, as AIPerf does for TPOT.
+            tpot_ms=_llmperf_latency(record, "inter_token_latency"),
+            e2el_ms=_llmperf_latency(record, "end_to_end_latency"),
+            output_token_throughput=_number(
+                record.get("results_mean_output_throughput_token_per_s")
+            ),
+            request_throughput=(
+                value / 60.0
+                if (value := _number(record.get("results_num_completed_requests_per_min")))
+                is not None
+                else None
+            ),
+            requests=RequestCounts(
+                successful=_number(record.get("results_num_completed_requests")),
+                failed=_number(record.get("results_number_errors")),
+            ),
+        ),
+        source_format="llmperf",
+        failed_requests_reported="results_number_errors" in record,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Detection and loading
 
 Converter = Callable[[dict[str, Any], SourceOptions], BenchmarkResult]
@@ -430,6 +499,7 @@ CONVERTERS: dict[str, Converter] = {
     "aiperf": _from_aiperf,
     "guidellm": _from_guidellm,
     "sglang": _from_sglang,
+    "llmperf": _from_llmperf,
 }
 
 
@@ -448,6 +518,10 @@ def detect_format(record: Any) -> str | None:
         for tag in ("time_to_first_token", "request_throughput", "request_latency")
     ):
         return "aiperf"
+    if "results_num_completed_requests" in record and (
+        "results_ttft_s_mean" in record or "results_mean_output_throughput_token_per_s" in record
+    ):
+        return "llmperf"
     if "completed" in record and ("request_throughput" in record or "mean_ttft_ms" in record):
         if "model_id" in record or "endpoint_type" in record or "failed" in record:
             return "vllm"
@@ -551,7 +625,7 @@ def load_directory(
         if format in ("auto", "normalized"):
             message += (
                 f" Normalized results must be named {', '.join(NORMALIZED_PATTERNS)};"
-                " results from vLLM, AIPerf, GuideLLM or SGLang are detected in any"
+                " results from vLLM, AIPerf, GuideLLM, SGLang or llmperf are detected in any"
                 " .json or .jsonl file."
             )
         else:
