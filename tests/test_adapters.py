@@ -1,13 +1,14 @@
-"""Reading saved results from vLLM, AIPerf, GuideLLM and SGLang.
+"""Reading saved results from vLLM, AIPerf, GuideLLM, SGLang and llmperf.
 
 The record builders mirror the files each tool writes (field names checked against the
-tools' source in October 2026), trimmed to the fields Inference Doctor reads plus a few
+tools' source in October-November 2026), trimmed to the fields Inference Doctor reads plus a few
 it must ignore.
 """
 
 from __future__ import annotations
 
 import json
+from dataclasses import astuple
 from pathlib import Path
 
 import pytest
@@ -162,6 +163,40 @@ def guidellm_file(*benchmarks: dict) -> dict:
     }
 
 
+def llmperf_record(throughput: float = 1341.8, errors: int = 2) -> dict:
+    # Keys checked against a public llmperf summary file:
+    # https://github.com/obi10/llmperf/blob/6a9c7bcdc37b23a3e2d6ef6c61fef11dd8e4e242/resultstest/-models_128_128_summary.json
+    return {
+        "version": "2023-08-31",
+        "name": "model_128_128_summary",
+        "timestamp": 1747428122,
+        "model": "test-model",
+        "mean_input_tokens": 128,
+        "stddev_input_tokens": 10,
+        "mean_output_tokens": 128,
+        "stddev_output_tokens": 10,
+        "num_concurrent_requests": 10,
+        "additional_sampling_params_temperature": 0.8,
+        "results_ttft_s_mean": 0.295,
+        "results_ttft_s_quantiles_p50": 0.28,
+        "results_ttft_s_quantiles_p95": 0.36,
+        "results_ttft_s_quantiles_p99": 0.54,
+        "results_inter_token_latency_s_mean": 0.128,
+        "results_inter_token_latency_s_quantiles_p50": 0.12,
+        "results_inter_token_latency_s_quantiles_p95": 0.14,
+        "results_inter_token_latency_s_quantiles_p99": 0.16,
+        "results_end_to_end_latency_s_mean": 14.8,
+        "results_end_to_end_latency_s_quantiles_p50": 15.8,
+        "results_end_to_end_latency_s_quantiles_p95": 18.2,
+        "results_end_to_end_latency_s_quantiles_p99": 19.5,
+        "results_mean_output_throughput_token_per_s": throughput,
+        "results_num_completed_requests_per_min": 36.0,
+        "results_num_completed_requests": 100,
+        "results_num_requests_started": 100 + errors,
+        "results_number_errors": errors,
+    }
+
+
 def _write(path: Path, payload) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     if isinstance(payload, list):
@@ -177,6 +212,7 @@ def test_detects_each_format():
     assert detect_format(sglang_record()) == "sglang"
     assert detect_format(aiperf_record()) == "aiperf"
     assert detect_format(guidellm_file(guidellm_benchmark(1))) == "guidellm"
+    assert detect_format(llmperf_record()) == "llmperf"
     assert detect_format({"schema_version": "1", "environment": {}, "metrics": {}}) == "normalized"
     assert detect_format({"some": "other json"}) is None
 
@@ -280,6 +316,44 @@ def test_guidellm_sweep_needs_a_benchmark_index(tmp_path):
     assert result.metrics.e2el_ms.mean == pytest.approx(5010.0)  # seconds converted to ms
     assert result.metrics.requests.failed == 0  # incomplete requests are not failures
     assert result.metrics.output_token_throughput == 1341.8
+
+
+def test_llmperf_summary_fields_and_seconds_to_milliseconds(tmp_path):
+    _write(tmp_path / "model_128_128_summary.json", llmperf_record())
+    _write(tmp_path / "model_128_128_individual_responses.json", [{"ignored": True}])
+    loaded = load_directory(tmp_path)
+    assert loaded.format == "llmperf"
+    assert len(loaded.records) == 1
+    result = loaded.records[0].result
+    assert result.environment.model == "test-model"
+    assert result.environment.gpu == "unspecified"
+    assert astuple(result.metrics.ttft_ms) == pytest.approx((295.0, 280.0, 360.0, 540.0))
+    assert astuple(result.metrics.tpot_ms) == pytest.approx((128.0, 120.0, 140.0, 160.0))
+    assert astuple(result.metrics.e2el_ms) == pytest.approx((14800.0, 15800.0, 18200.0, 19500.0))
+    assert result.metrics.itl_ms.mean is None
+    assert result.metrics.output_token_throughput == 1341.8
+    assert result.metrics.total_token_throughput is None
+    assert result.metrics.request_throughput == pytest.approx(0.6)
+    assert result.metrics.requests.successful == 100
+    assert result.metrics.requests.failed == 2
+    assert result.failed_requests_reported is True
+    assert result.benchmark_parameters == {
+        "mean_input_tokens": 128,
+        "stddev_input_tokens": 10,
+        "mean_output_tokens": 128,
+        "stddev_output_tokens": 10,
+        "num_concurrent_requests": 10,
+        "additional_sampling_params_temperature": 0.8,
+    }
+
+
+def test_llmperf_summary_directories_compare(tmp_path):
+    for side, values in (("b", (1000, 1010, 995)), ("c", (990, 1000, 985))):
+        for index, value in enumerate(values):
+            _write(tmp_path / side / f"run-{index}_summary.json", llmperf_record(value, errors=0))
+    report = load_and_compare_directories(tmp_path / "b", tmp_path / "c")
+    assert report["input"]["baseline"]["format"] == "llmperf"
+    assert report["result"] == "PASS"
 
 
 def test_auto_prefers_normalized_names_so_raw_files_beside_them_are_not_double_counted(tmp_path):

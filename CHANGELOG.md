@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `compare-runs` reads llmperf `*_summary.json` results directly, including latency quantiles, throughput, request counts and recorded workload parameters.
+
 ## 0.5.0 - 2026-10-31
 
 ### Added: cost (experimental)

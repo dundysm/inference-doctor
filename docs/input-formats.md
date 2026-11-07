@@ -10,6 +10,7 @@ Lines file, counts as one repetition. Directories are searched recursively.
 | `aiperf` | NVIDIA AIPerf `profile_export_aiperf.json`, or GenAI-Perf `profile_export_genai_perf.json` | a file |
 | `guidellm` | GuideLLM `benchmarks.json` | one benchmark of the sweep in a file (`--guidellm-benchmark`) |
 | `sglang` | SGLang `bench_serving` output (`.jsonl`) | a line |
+| `llmperf` | [llmperf](https://github.com/ray-project/llmperf) `*_summary.json` | a file |
 | `normalized` | Inference Doctor's own schema, see [benchmark-format.md](benchmark-format.md) | a file |
 
 `--format auto`, the default, detects the format of each file. If any file is named
@@ -21,7 +22,7 @@ error. These files are always skipped: vLLM's `*.pytorch.json` sidecar, AIPerf's
 `*_aggregate.json` and `*_collated.json`, and `summary.json`, `run.json` or any name
 containing `aggregate`.
 
-Field names were checked against each tool's source on its main branch in October 2026.
+Field names were checked against each tool's source on its main branch in October-November 2026.
 If a newer release renames a field, the metric shows as missing and the result is
 `INCONCLUSIVE` with a reason; it never silently becomes zero.
 
@@ -30,19 +31,19 @@ If a newer release renames a field, the metric shows as missing and the result i
 Latency metrics are in milliseconds and can be compared at `mean`, `median`, `p95` and
 `p99`, for example `--metric ttft_p99_ms` or `--metric e2el_p95_ms`.
 
-| Metric | vLLM | AIPerf | GuideLLM (successful requests) | SGLang |
-| --- | --- | --- | --- | --- |
-| `ttft_*_ms` | `mean_ttft_ms`, `median_ttft_ms`, `p95_ttft_ms`, `p99_ttft_ms` | `time_to_first_token` | `time_to_first_token_ms` | `*_ttft_ms` |
-| `tpot_*_ms` | `*_tpot_ms` | `inter_token_latency` (the per-request average, which is TPOT) | `time_per_output_token_ms` | `*_tpot_ms` |
-| `itl_*_ms` | `*_itl_ms` | not available | `inter_token_latency_ms` | `*_itl_ms` |
-| `e2el_*_ms` | `*_e2el_ms` | `request_latency` | `request_latency` (seconds, converted) | `*_e2e_latency_ms` |
-| `output_token_throughput` | `output_throughput` | `output_token_throughput` | `output_tokens_per_second` | `output_throughput` |
-| `total_token_throughput` | `total_token_throughput` | `total_token_throughput` | `tokens_per_second` | `total_throughput` |
-| `request_throughput` | `request_throughput` | `request_throughput` | `requests_per_second` | `request_throughput` |
-| successful requests | `completed` | `request_count` | `request_totals.successful` | `completed` |
-| failed requests | `failed` | `error_request_count`, or completed minus successful | `request_totals.errored` | `errors` with `--output-details`, otherwise not recorded |
-| model | `model_id` | `input_config.models.items[0].name` | `config.backend.model` | `server_info.model_path` |
-| GPU | `--metadata gpu=...` | GPU telemetry `gpu_name`, if collected | not recorded | not recorded |
+| Metric | vLLM | AIPerf | GuideLLM (successful requests) | SGLang | llmperf |
+| --- | --- | --- | --- | --- | --- |
+| `ttft_*_ms` | `mean_ttft_ms`, `median_ttft_ms`, `p95_ttft_ms`, `p99_ttft_ms` | `time_to_first_token` | `time_to_first_token_ms` | `*_ttft_ms` | `results_ttft_s_*` (seconds, converted) |
+| `tpot_*_ms` | `*_tpot_ms` | `inter_token_latency` (the per-request average, which is TPOT) | `time_per_output_token_ms` | `*_tpot_ms` | `results_inter_token_latency_s_*` (per-request average, seconds, converted) |
+| `itl_*_ms` | `*_itl_ms` | not available | `inter_token_latency_ms` | `*_itl_ms` | not available |
+| `e2el_*_ms` | `*_e2el_ms` | `request_latency` | `request_latency` (seconds, converted) | `*_e2e_latency_ms` | `results_end_to_end_latency_s_*` (seconds, converted) |
+| `output_token_throughput` | `output_throughput` | `output_token_throughput` | `output_tokens_per_second` | `output_throughput` | `results_mean_output_throughput_token_per_s` |
+| `total_token_throughput` | `total_token_throughput` | `total_token_throughput` | `tokens_per_second` | `total_throughput` | not available |
+| `request_throughput` | `request_throughput` | `request_throughput` | `requests_per_second` | `request_throughput` | `results_num_completed_requests_per_min` (divided by 60) |
+| successful requests | `completed` | `request_count` | `request_totals.successful` | `completed` | `results_num_completed_requests` |
+| failed requests | `failed` | `error_request_count`, or completed minus successful | `request_totals.errored` | `errors` with `--output-details`, otherwise not recorded | `results_number_errors` |
+| model | `model_id` | `input_config.models.items[0].name` | `config.backend.model` | `server_info.model_path` | `model` |
+| GPU | `--metadata gpu=...` | GPU telemetry `gpu_name`, if collected | not recorded | not recorded | not recorded |
 
 Notes by tool:
 
@@ -63,6 +64,12 @@ Notes by tool:
   count. Without `--output-details` the report notes that failures could not be checked
   instead of returning `INCONCLUSIVE`. With it, a non-empty entry in `errors` counts as
   a failure.
+- **llmperf** writes a summary file and an individual-responses file; only the
+  [summary](https://github.com/ray-project/llmperf/blob/main/token_benchmark_ray.py)
+  is a repetition. `results_inter_token_latency_s_*` is the per-request average
+  token gap, so it maps to TPOT. Compared workload parameters are input/output
+  token means and standard deviations, concurrency, and any additional sampling
+  parameters recorded in the file. The summary does not record the GPU.
 
 ## When the files do not say
 
